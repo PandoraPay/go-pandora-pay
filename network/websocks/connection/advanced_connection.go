@@ -104,13 +104,16 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 
 	defer func() {
 
+		closeCn := false
 		c.answerMapLock.Lock()
 		if c.answerMap[replyBackId] != nil {
 			delete(c.answerMap, replyBackId)
+			closeCn = true
 		}
 		c.answerMapLock.Unlock()
-
-		close(eventCn)
+		if closeCn {
+			close(eventCn)
+		}
 	}()
 
 	message := &advanced_connection_types.AdvancedConnectionMessage{
@@ -234,6 +237,9 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 		c.answerMapLock.Lock()
 		cn := c.answerMap[message.ReplyId]
+		if cn != nil {
+			delete(c.answerMap, message.ReplyId)
+		}
 		c.answerMapLock.Unlock()
 
 		if cn != nil {
@@ -263,7 +269,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		recovery.SafeGo(func() {
 			message := &advanced_connection_types.AdvancedConnectionMessage{}
-			if err = msgpack.Unmarshal(read, message); err == nil {
+			if err = msgpack.Unmarshal(read, message); err == nil && message != nil {
 				c.processRead(message)
 			}
 		})

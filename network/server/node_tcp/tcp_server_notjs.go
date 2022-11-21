@@ -55,9 +55,6 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 	port = strconv.Itoa(portNumber)
 
 	var address string
-	if arguments.Arguments["--tor-onion"] != nil {
-		address = arguments.Arguments["--tor-onion"].(string)
-	}
 	if arguments.Arguments["--tcp-server-address"] != nil {
 		address = arguments.Arguments["--tcp-server-address"].(string)
 	}
@@ -81,10 +78,8 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 				return nil, errors.New("Error closing the connection" + err.Error())
 			}
 		}
-		server.Address = address
 	}
 
-	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: "127.0.0.1:" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
 	var certPath, keyPath string
@@ -133,17 +128,34 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 	}
 
 	if shareAddress {
-		websocketUrl := &url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}
-		url := &url.URL{Scheme: "http", Host: address + ":" + port, Path: ""}
-		if tlsConfig != nil {
-			websocketUrl.Scheme += "s"
-			url.Scheme += "s"
+
+		var u *url.URL
+
+		if arguments.Arguments["--tcp-server-url"] != nil {
+			if u, err = url.Parse(arguments.Arguments["--tcp-server-url"].(string)); err != nil {
+				return nil, err
+			}
+		} else {
+			u = &url.URL{Scheme: "http", Host: address + ":" + port, Path: ""}
+			if tlsConfig != nil {
+				u.Host += "s"
+			}
 		}
-		network_config.NETWORK_ADDRESS_URL_STRING = url.String()
+
+		websocketUrl := &url.URL{Scheme: u.Scheme, Host: u.Host, Path: u.Path}
+		if websocketUrl.Scheme == "http" {
+			websocketUrl.Scheme = "ws"
+		} else if websocketUrl.Scheme == "https" {
+			websocketUrl.Scheme = "wss"
+		}
+		websocketUrl.Path += "/ws"
+
+		network_config.NETWORK_ADDRESS_URL_STRING = u.String()
 		network_config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING = websocketUrl.String()
 
 		bannedNodes.Ban(websocketUrl, "", "You can't connect to yourself", 10*365*24*time.Hour)
-		server.URL = url
+		server.URL = u
+		server.Address = u.Host
 	}
 
 	if tlsConfig != nil {

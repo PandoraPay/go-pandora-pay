@@ -28,6 +28,7 @@ const (
 	WEBSOCKETS_MAX_SUBSCRIPTIONS                  = 30
 	WEBSOCKETS_INCREASE_KNOWN_NODE_SCORE_INTERVAL = 1 * time.Minute
 	WEBSOCKETS_CONCURRENT_NEW_CONENCTIONS         = 5
+	WEBSOCKETS_TIMEOUT                            = 15 * time.Second //seconds
 )
 
 func InitConfig() (err error) {
