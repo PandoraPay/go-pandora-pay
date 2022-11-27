@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 )
 
-type ConnectedNodes struct {
+type ConnectedNodesType struct {
 	AllAddresses  *generics.Map[string, *connection.AdvancedConnection]
 	AllList       *container_list.ContainerList[*connection.AdvancedConnection]
 	Clients       int64 //use atomic
@@ -15,18 +15,18 @@ type ConnectedNodes struct {
 	TotalSockets  int64 //use atomic
 }
 
-func (this *ConnectedNodes) JustConnected(c *connection.AdvancedConnection, remoteAddr string) bool {
+func (this *ConnectedNodesType) JustConnected(c *connection.AdvancedConnection, remoteAddr string) bool {
 	if _, ok := this.AllAddresses.LoadOrStore(remoteAddr, c); ok {
 		return false
 	}
 	return true
 }
 
-func (this *ConnectedNodes) JustDisconnected(c *connection.AdvancedConnection) {
+func (this *ConnectedNodesType) JustDisconnected(c *connection.AdvancedConnection) {
 	this.AllAddresses.LoadAndDelete(c.RemoteAddr)
 }
 
-func (this *ConnectedNodes) ConnectedHandshakeValidated(c *connection.AdvancedConnection) int64 {
+func (this *ConnectedNodesType) ConnectedHandshakeValidated(c *connection.AdvancedConnection) int64 {
 	this.AllList.Push(c)
 	if c.ConnectionType {
 		atomic.AddInt64(&this.ServerSockets, +1)
@@ -36,7 +36,7 @@ func (this *ConnectedNodes) ConnectedHandshakeValidated(c *connection.AdvancedCo
 	return atomic.AddInt64(&this.TotalSockets, +1)
 }
 
-func (this *ConnectedNodes) Disconnected(c *connection.AdvancedConnection) int64 {
+func (this *ConnectedNodesType) Disconnected(c *connection.AdvancedConnection) int64 {
 	this.AllList.Remove(c)
 	if c.ConnectionType {
 		atomic.AddInt64(&this.ServerSockets, -1)
@@ -46,8 +46,10 @@ func (this *ConnectedNodes) Disconnected(c *connection.AdvancedConnection) int64
 	return atomic.AddInt64(&this.TotalSockets, -1)
 }
 
-func NewConnectedNodes() *ConnectedNodes {
-	return &ConnectedNodes{
+var ConnectedNodes *ConnectedNodesType
+
+func init() {
+	ConnectedNodes = &ConnectedNodesType{
 		&generics.Map[string, *connection.AdvancedConnection]{},
 		container_list.NewContainerList[*connection.AdvancedConnection](),
 		0,

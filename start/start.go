@@ -11,6 +11,7 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/blockchain/forging"
 	"pandora-pay/blockchain/genesis"
+	"pandora-pay/chain_network"
 	"pandora-pay/config"
 	"pandora-pay/config/arguments"
 	"pandora-pay/config/config_forging"
@@ -151,6 +152,8 @@ func StartMainNow() (err error) {
 		return
 	}
 	globals.MainEvents.BroadcastEvent("main", "network initialized")
+
+	chain_network.InitChainNetwork(app.Chain, app.Mempool)
 
 	gui.GUI.Log("Main Loop")
 	globals.MainEvents.BroadcastEvent("main", "initialized")

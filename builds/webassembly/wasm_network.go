@@ -11,12 +11,14 @@ import (
 	"pandora-pay/blockchain/info"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/builds/webassembly/webassembly_utils"
+	"pandora-pay/chain_network"
 	"pandora-pay/helpers/advanced_buffers"
 	"pandora-pay/network"
 	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/api_implementation/api_common/api_faucet"
 	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"syscall/js"
 	"time"
@@ -24,7 +26,7 @@ import (
 
 func networkDisconnect(this js.Value, args []js.Value) interface{} {
 	return webassembly_utils.PromiseFunction(func() (interface{}, error) {
-		return network.Network.Websockets.Disconnect(), nil
+		return websocks.Websockets.Disconnect(), nil
 	})
 }
 
@@ -360,7 +362,7 @@ func postNetworkMempoolBroadcastTransaction(this js.Value, args []js.Value) inte
 			return nil, err
 		}
 
-		errs := network.Network.Websockets.BroadcastTxs([]*transaction.Transaction{tx}, true, true, advanced_connection_types.UUID_ALL, context.Background())
+		errs := chain_network.BroadcastTxs([]*transaction.Transaction{tx}, true, true, advanced_connection_types.UUID_ALL, context.Background())
 		if errs[0] != nil {
 			return nil, errs[0]
 		}

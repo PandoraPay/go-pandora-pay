@@ -6,30 +6,23 @@ import (
 	"time"
 )
 
-type BannedNode struct {
-	URL        *url.URL
-	Timestamp  time.Time
-	Expiration time.Time
-	Message    string
-}
-
-type BannedNodes struct {
+type BannedNodesType struct {
 	bannedMap *generics.Map[string, *BannedNode]
 }
 
-func (self *BannedNodes) IsBanned(urlStr string) bool {
-	if _, found := self.bannedMap.Load(urlStr); found {
+func (this *BannedNodesType) IsBanned(urlStr string) bool {
+	if _, found := this.bannedMap.Load(urlStr); found {
 		return true
 	}
 	return false
 }
 
-func (self *BannedNodes) Ban(url *url.URL, urlStr, message string, duration time.Duration) {
+func (this *BannedNodesType) Ban(url *url.URL, urlStr, message string, duration time.Duration) {
 	if urlStr == "" {
 		urlStr = url.String()
 	}
 	time := time.Now()
-	self.bannedMap.Store(urlStr, &BannedNode{
+	this.bannedMap.Store(urlStr, &BannedNode{
 		URL:        url,
 		Message:    message,
 		Timestamp:  time,
@@ -37,8 +30,10 @@ func (self *BannedNodes) Ban(url *url.URL, urlStr, message string, duration time
 	})
 }
 
-func NewBannedNodes() *BannedNodes {
-	return &BannedNodes{
+var BannedNodes *BannedNodesType
+
+func init() {
+	BannedNodes = &BannedNodesType{
 		bannedMap: &generics.Map[string, *BannedNode]{},
 	}
 }

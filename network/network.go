@@ -6,11 +6,8 @@ import (
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
 	"pandora-pay/mempool"
-	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
-	"pandora-pay/network/known_nodes_sync"
-	"pandora-pay/network/mempool_sync"
 	"pandora-pay/network/server/node_tcp"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
@@ -19,24 +16,17 @@ import (
 	"time"
 )
 
-type NetworkType struct {
-	tcpServer      *node_tcp.TcpServer
-	Websockets     *websocks.Websockets
-	ConnectedNodes *connected_nodes.ConnectedNodes
-	KnownNodes     *known_nodes.KnownNodes
-	BannedNodes    *banned_nodes.BannedNodes
-	MempoolSync    *mempool_sync.MempoolSync
-	KnownNodesSync *known_nodes_sync.KnownNodesSync
+type networkType struct {
 }
 
-var Network *NetworkType
+var Network *networkType
 
-func (network *NetworkType) Send(name, data []byte, ctxDuration time.Duration) error {
+func (this *networkType) Send(name, data []byte, ctxDuration time.Duration) error {
 
 	for {
 
-		<-network.Websockets.ReadyCn.Load()
-		list := network.ConnectedNodes.AllList.Get()
+		<-websocks.Websockets.ReadyCn.Load()
+		list := connected_nodes.ConnectedNodes.AllList.Get()
 		if len(list) > 0 {
 			sock := list[0]
 			if err := sock.Send(name, data, ctxDuration); err != nil {
@@ -48,19 +38,19 @@ func (network *NetworkType) Send(name, data []byte, ctxDuration time.Duration) e
 
 }
 
-func (network *NetworkType) SendJSON(name, data []byte, ctxDuration time.Duration) error {
+func (this *networkType) SendJSON(name, data []byte, ctxDuration time.Duration) error {
 	out, err := msgpack.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	return network.Send(name, out, ctxDuration)
+	return this.Send(name, out, ctxDuration)
 }
 
-func (network *NetworkType) SendAwaitAnswer(name, data []byte, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
+func (this *networkType) SendAwaitAnswer(name, data []byte, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
 	for {
-		<-network.Websockets.ReadyCn.Load()
-		list := network.ConnectedNodes.AllList.Get()
+		<-websocks.Websockets.ReadyCn.Load()
+		list := connected_nodes.ConnectedNodes.AllList.Get()
 		if len(list) > 0 {
 			sock := list[0]
 			result := sock.SendAwaitAnswer(name, data, ctxParent, ctxDuration)
@@ -80,8 +70,8 @@ func SendJSONAwaitAnswer[T any](name []byte, data any, ctxParent context.Context
 	}
 
 	for {
-		<-Network.Websockets.ReadyCn.Load()
-		list := Network.ConnectedNodes.AllList.Get()
+		<-websocks.Websockets.ReadyCn.Load()
+		list := connected_nodes.ConnectedNodes.AllList.Get()
 		if len(list) > 0 {
 			sock := list[0]
 
@@ -104,45 +94,20 @@ func SendJSONAwaitAnswer[T any](name []byte, data any, ctxParent context.Context
 
 func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet) error {
 
-	connectedNodes := connected_nodes.NewConnectedNodes()
-	bannedNodes := banned_nodes.NewBannedNodes()
-
-	knownNodes := known_nodes.NewKnownNodes(connectedNodes, bannedNodes)
-
 	list := make([]string, len(config.NETWORK_SELECTED_SEEDS))
 	for i, seed := range config.NETWORK_SELECTED_SEEDS {
 		list[i] = seed.Url
 	}
-	if err := knownNodes.Reset(list, true); err != nil {
+	if err := known_nodes.KnownNodes.Reset(list, true); err != nil {
 		return err
 	}
 
-	tcpServer, err := node_tcp.NewTcpServer(connectedNodes, bannedNodes, knownNodes, settings, chain, mempool, wallet)
-	if err != nil {
+	if err := node_tcp.NewTcpServer(settings, chain, mempool, wallet); err != nil {
 		return err
 	}
 
-	network := &NetworkType{
-		tcpServer,
-		tcpServer.HttpServer.Websockets,
-		connectedNodes,
-		knownNodes,
-		bannedNodes,
-		mempool_sync.NewMempoolSync(tcpServer.HttpServer.Websockets),
-		known_nodes_sync.NewNodesKnownSync(tcpServer.HttpServer.Websockets, knownNodes),
-	}
+	Network = &networkType{}
 
-	network.continuouslyConnectingNewPeers()
-
-	network.continuouslyDownloadChain()
-
-	if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL {
-		network.continuouslyDownloadMempool()
-		network.continuouslyDownloadNetworkNodes()
-	}
-
-	network.syncBlockchainNewConnections()
-
-	Network = network
+	Network.continuouslyConnectingNewPeers()
 	return nil
 }

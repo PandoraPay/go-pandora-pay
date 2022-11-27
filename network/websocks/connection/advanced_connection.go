@@ -41,7 +41,7 @@ type AdvancedConnection struct {
 	InitializedStatus        InitializedStatusType //use the mutex
 	InitializedStatusMutex   *sync.Mutex
 	IsClosed                 *abool.AtomicBool
-	getMap                   map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
+	getMap                   map[string]func(conn *AdvancedConnection, values []byte) (any, error)
 	answerMap                map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
 	answerMapLock            *sync.Mutex
 	Subscriptions            *Subscriptions
@@ -329,7 +329,7 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
 }
 
-func NewAdvancedConnection(conn *websock.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(*AdvancedConnection), onIncreaseKnownNodeScore func(*known_node.KnownNodeScored, int32, bool) bool) (*AdvancedConnection, error) {
+func NewAdvancedConnection(conn *websock.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (any, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(*AdvancedConnection), onIncreaseKnownNodeScore func(*known_node.KnownNodeScored, int32, bool) bool) (*AdvancedConnection, error) {
 
 	//making sure u is not collided with UUID_ALL and UUID_SKIP_ALL
 	uuid := advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))

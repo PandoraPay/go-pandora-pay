@@ -8,30 +8,31 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/api_implementation/api_websockets"
-	"pandora-pay/network/banned_nodes"
-	"pandora-pay/network/connected_nodes"
-	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/websocks"
 	"pandora-pay/settings"
 	"pandora-pay/wallet"
 )
 
-type HttpServer struct {
-	Websockets *websocks.Websockets
+type httpServerType struct {
+	ApiWebsockets *api_websockets.APIWebsockets
 }
 
-func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet) (*HttpServer, error) {
+var HttpServer *httpServerType
+
+func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool, wallet *wallet.Wallet) error {
 
 	apiStore := api_common.NewAPIStore(chain)
-	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, apiStore)
+	apiCommon, err := api_common.NewAPICommon(mempool, chain, wallet, apiStore)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	apiWebsockets := api_websockets.NewWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool)
-	websockets := websocks.NewWebsockets(chain, mempool, settings, connectedNodes, knownNodes, bannedNodes, apiWebsockets)
+	websocks.NewWebsockets(chain, mempool, settings, apiWebsockets.GetMap)
 
-	return &HttpServer{
-		websockets,
-	}, nil
+	HttpServer = &httpServerType{
+		apiWebsockets,
+	}
+
+	return nil
 }

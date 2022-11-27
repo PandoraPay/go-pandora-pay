@@ -14,7 +14,6 @@ import (
 )
 
 type WebsocketSubscriptions struct {
-	websockets                        *Websockets
 	chain                             *blockchain.Blockchain
 	mempool                           *mempool.Mempool
 	websocketClosedCn                 chan *connection.AdvancedConnection
@@ -26,10 +25,10 @@ type WebsocketSubscriptions struct {
 	transactionsSubscriptions         map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 }
 
-func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockchain, mempool *mempool.Mempool) (subs *WebsocketSubscriptions) {
+func newWebsocketSubscriptions(chain *blockchain.Blockchain, mempool *mempool.Mempool) (subs *WebsocketSubscriptions) {
 
 	subs = &WebsocketSubscriptions{
-		websockets, chain, mempool, make(chan *connection.AdvancedConnection),
+		chain, mempool, make(chan *connection.AdvancedConnection),
 		make(chan *connection.SubscriptionNotification),
 		make(chan *connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),

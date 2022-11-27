@@ -18,8 +18,6 @@ import (
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
 	"pandora-pay/network/banned_nodes"
-	"pandora-pay/network/connected_nodes"
-	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/network_config"
 	"pandora-pay/network/server/node_http"
 	"pandora-pay/settings"
@@ -29,17 +27,18 @@ import (
 	"time"
 )
 
-type TcpServer struct {
+type tcpServerType struct {
 	Address     string
 	Port        string
 	URL         *url.URL
 	tcpListener net.Listener
-	HttpServer  *node_http.HttpServer
 }
 
-func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet) (*TcpServer, error) {
+var TcpServer *tcpServerType
 
-	server := &TcpServer{}
+func NewTcpServer(settings *settings.Settings, chain *blockchain.Blockchain, mempool *mempool.Mempool, wallet *wallet.Wallet) error {
+
+	TcpServer = &tcpServerType{}
 
 	// Create local listener on next available port
 
@@ -47,7 +46,7 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 
 	portNumber, err := strconv.Atoi(port)
 	if err != nil {
-		return nil, errors.New("Port is not a valid port number")
+		return errors.New("Port is not a valid port number")
 	}
 
 	portNumber += config.INSTANCE_ID
@@ -59,7 +58,7 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 		address = arguments.Arguments["--tcp-server-address"].(string)
 	}
 
-	server.Port = port
+	TcpServer.Port = port
 
 	shareAddress := true
 	if address == "na" {
@@ -71,16 +70,16 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 		if address == "" {
 			conn, err := net.Dial("udp", "8.8.8.8:80")
 			if err != nil {
-				return nil, errors.New("Error dialing dns to discover my own ip" + err.Error())
+				return errors.New("Error dialing dns to discover my own ip" + err.Error())
 			}
 			address = conn.LocalAddr().(*net.UDPAddr).IP.String()
 			if err = conn.Close(); err != nil {
-				return nil, errors.New("Error closing the connection" + err.Error())
+				return errors.New("Error closing the connection" + err.Error())
 			}
 		}
 	}
 
-	bannedNodes.Ban(&url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
+	banned_nodes.BannedNodes.Ban(&url.URL{Scheme: "ws", Host: address + ":" + port, Path: "/ws"}, "", "You can't connect to yourself", 10*365*24*time.Hour)
 
 	var certPath, keyPath string
 	if arguments.Arguments["--tcp-server-tls-cert-file"] != nil {
@@ -99,20 +98,20 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 	if _, err = os.Stat(certPath); err == nil {
 		cer, err := tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
 	} else if arguments.Arguments["--tcp-server-auto-tls-certificate"] == true {
 
 		if arguments.Arguments["--tcp-server-address"] == "" {
-			return nil, errors.New("To get an automatic Automatic you need to specify a domain --tcp-server-address=\"domain.com\"")
+			return errors.New("To get an automatic Automatic you need to specify a domain --tcp-server-address=\"domain.com\"")
 		}
 
 		cache := path.Join(config.ORIGINAL_PATH, "certManager")
 
 		if _, err = os.Stat(cache); os.IsNotExist(err) {
 			if err = os.Mkdir(cache, 0755); err != nil {
-				return nil, err
+				return err
 			}
 		}
 
@@ -133,7 +132,7 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 
 		if arguments.Arguments["--tcp-server-url"] != nil {
 			if u, err = url.Parse(arguments.Arguments["--tcp-server-url"].(string)); err != nil {
-				return nil, err
+				return err
 			}
 		} else {
 			u = &url.URL{Scheme: "http", Host: address + ":" + port, Path: ""}
@@ -153,36 +152,36 @@ func NewTcpServer(connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *b
 		network_config.NETWORK_ADDRESS_URL_STRING = u.String()
 		network_config.NETWORK_WEBSOCKET_ADDRESS_URL_STRING = websocketUrl.String()
 
-		bannedNodes.Ban(websocketUrl, "", "You can't connect to yourself", 10*365*24*time.Hour)
-		server.URL = u
-		server.Address = u.Host
+		banned_nodes.BannedNodes.Ban(websocketUrl, "", "You can't connect to yourself", 10*365*24*time.Hour)
+		TcpServer.URL = u
+		TcpServer.Address = u.Host
 	}
 
 	if tlsConfig != nil {
-		if server.tcpListener, err = tls.Listen("tcp", ":"+port, tlsConfig); err != nil {
-			return nil, err
+		if TcpServer.tcpListener, err = tls.Listen("tcp", ":"+port, tlsConfig); err != nil {
+			return err
 		}
 		gui.GUI.Info("TLS Certificate loaded for ", address, port)
 	} else {
 		// no ssl at all
-		if server.tcpListener, err = net.Listen("tcp", ":"+port); err != nil {
-			return nil, errors.New("Error creating TcpServer" + err.Error())
+		if TcpServer.tcpListener, err = net.Listen("tcp", ":"+port); err != nil {
+			return errors.New("Error creating TcpServer" + err.Error())
 		}
 		gui.GUI.Warning("No TLS Certificate")
 	}
 
 	gui.GUI.InfoUpdate("TCP", address+":"+port)
 
-	if server.HttpServer, err = node_http.NewHttpServer(chain, settings, connectedNodes, bannedNodes, knownNodes, mempool, wallet); err != nil {
-		return nil, err
+	if err = node_http.NewHttpServer(chain, settings, mempool, wallet); err != nil {
+		return err
 	}
 
 	recovery.SafeGo(func() {
-		if err := http.Serve(server.tcpListener, *server.HttpServer.GetHttpHandler()); err != nil {
+		if err := http.Serve(TcpServer.tcpListener, *node_http.HttpServer.GetHttpHandler()); err != nil {
 			gui.GUI.Error("Error opening HTTP server", err)
 		}
 		gui.GUI.Info("HTTP server")
 	})
 
-	return server, nil
+	return nil
 }

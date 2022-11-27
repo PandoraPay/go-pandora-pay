@@ -6,10 +6,6 @@ import (
 	"pandora-pay/network/api_implementation/api_common"
 )
 
-type HTTPServerRPCRoutes struct {
-	apiCommon *api_common.APICommon
-}
-
 func InitializeRPC(apiCommon *api_common.APICommon) (err error) {
 
 	s := rpc.NewServer()

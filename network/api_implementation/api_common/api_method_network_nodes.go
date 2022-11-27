@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"net/http"
 	"pandora-pay/helpers/generics"
+	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/known_nodes/known_node"
 	"pandora-pay/network/network_config"
 	"pandora-pay/store/min_max_heap"
@@ -27,7 +28,7 @@ func (api *APICommon) GetList(reply *APINetworkNodesReply) (err error) {
 
 		api.temporaryListCreation.Store(now.Add(time.Minute * 1))
 
-		knownList := api.knownNodes.GetList()
+		knownList := known_nodes.KnownNodes.GetList()
 
 		count := generics.Min(network_config.NETWORK_KNOWN_NODES_LIST_RETURN, len(knownList))
 

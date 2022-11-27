@@ -15,9 +15,6 @@ import (
 	"pandora-pay/network/api_implementation/api_common"
 	"pandora-pay/network/api_implementation/api_http"
 	"pandora-pay/network/api_implementation/api_websockets"
-	"pandora-pay/network/banned_nodes"
-	"pandora-pay/network/connected_nodes"
-	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/network_config"
 	"pandora-pay/network/server/node_http_rpc"
 	"pandora-pay/network/websocks"
@@ -25,17 +22,17 @@ import (
 	"pandora-pay/wallet"
 )
 
-type HttpServer struct {
-	Websockets      *websocks.Websockets
-	websocketServer *websocks.WebsocketServer
-	Api             *api_http.API
-	ApiWebsockets   *api_websockets.APIWebsockets
-	ApiStore        *api_common.APIStore
-	GetMap          map[string]func(values url.Values) (any, error)
-	PostMap         map[string]func(values io.ReadCloser) (any, error)
+type httpServerType struct {
+	Api           *api_http.API
+	ApiWebsockets *api_websockets.APIWebsockets
+	ApiStore      *api_common.APIStore
+	GetMap        map[string]func(values url.Values) (any, error)
+	PostMap       map[string]func(values io.ReadCloser) (any, error)
 }
 
-func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
+var HttpServer *httpServerType
+
+func (this *httpServerType) get(w http.ResponseWriter, req *http.Request) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -46,7 +43,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 	var err error
 	var output interface{}
 
-	callback := server.GetMap[req.URL.Path]
+	callback := this.GetMap[req.URL.Path]
 	if callback != nil {
 
 		var args url.Values
@@ -81,7 +78,7 @@ func (server *HttpServer) get(w http.ResponseWriter, req *http.Request) {
 	w.Write(final)
 }
 
-func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
+func (this *httpServerType) post(w http.ResponseWriter, req *http.Request) {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -92,7 +89,7 @@ func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
 	var err error
 	var output interface{}
 
-	callback := server.PostMap[req.URL.Path]
+	callback := this.PostMap[req.URL.Path]
 	if callback != nil {
 		output, err = callback(req.Body)
 	} else {
@@ -121,57 +118,55 @@ func (server *HttpServer) post(w http.ResponseWriter, req *http.Request) {
 	w.Write(final)
 }
 
-func (server *HttpServer) GetHttpHandler() *http.Handler {
+func (this *httpServerType) GetHttpHandler() *http.Handler {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/ws", server.websocketServer.HandleUpgradeConnection)
+	mux.HandleFunc("/ws", websocks.Websockets.HandleUpgradeConnection)
 
 	for key, filepath := range network_config.STATIC_FILES {
 		fs := http.FileServer(http.Dir(filepath))
 		mux.Handle(key, http.StripPrefix(key, fs))
 	}
 
-	for key, callback := range server.Api.GetMap {
-		mux.HandleFunc("/"+key, server.get)
-		server.GetMap["/"+key] = callback
+	for key, callback := range this.Api.GetMap {
+		mux.HandleFunc("/"+key, this.get)
+		this.GetMap["/"+key] = callback
 	}
 
-	for key, callback := range server.Api.PostMap {
-		mux.HandleFunc("/"+key, server.post)
-		server.PostMap["/"+key] = callback
+	for key, callback := range this.Api.PostMap {
+		mux.HandleFunc("/"+key, this.post)
+		this.PostMap["/"+key] = callback
 	}
 
 	handler := cors.AllowAll().Handler(mux)
 	return &handler
 }
 
-func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, connectedNodes *connected_nodes.ConnectedNodes, bannedNodes *banned_nodes.BannedNodes, knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, wallet *wallet.Wallet) (*HttpServer, error) {
+func NewHttpServer(chain *blockchain.Blockchain, settings *settings.Settings, mempool *mempool.Mempool, wallet *wallet.Wallet) error {
 
 	apiStore := api_common.NewAPIStore(chain)
-	apiCommon, err := api_common.NewAPICommon(knownNodes, mempool, chain, wallet, apiStore)
+	apiCommon, err := api_common.NewAPICommon(mempool, chain, wallet, apiStore)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	apiWebsockets := api_websockets.NewWebsocketsAPI(apiStore, apiCommon, chain, settings, mempool)
 	api := api_http.NewAPI(apiStore, apiCommon, chain)
 
-	websockets := websocks.NewWebsockets(chain, mempool, settings, connectedNodes, knownNodes, bannedNodes, apiWebsockets)
+	websocks.NewWebsockets(chain, mempool, settings, apiWebsockets.GetMap)
 
-	server := &HttpServer{
-		websocketServer: websocks.NewWebsocketServer(websockets, connectedNodes, knownNodes),
-		Websockets:      websockets,
-		GetMap:          make(map[string]func(values url.Values) (any, error)),
-		PostMap:         make(map[string]func(values io.ReadCloser) (any, error)),
-		Api:             api,
-		ApiWebsockets:   apiWebsockets,
-		ApiStore:        apiStore,
+	HttpServer = &httpServerType{
+		api,
+		apiWebsockets,
+		apiStore,
+		make(map[string]func(values url.Values) (any, error)),
+		make(map[string]func(values io.ReadCloser) (any, error)),
 	}
 
 	if err = node_http_rpc.InitializeRPC(apiCommon); err != nil {
-		return nil, err
+		return err
 	}
 
-	return server, nil
+	return nil
 }

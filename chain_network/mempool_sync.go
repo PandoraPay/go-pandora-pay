@@ -1,19 +1,15 @@
-package mempool_sync
+package chain_network
 
 import (
 	"pandora-pay/config"
 	"pandora-pay/network/api_implementation/api_common"
-	"pandora-pay/network/websocks"
+	"pandora-pay/network/server/node_http"
 	"pandora-pay/network/websocks/connection"
 )
 
-type MempoolSync struct {
-	websockets *websocks.Websockets
-}
+func DownloadMempool(conn *connection.AdvancedConnection) (err error) {
 
-func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (err error) {
-
-	cb := self.websockets.ApiWebsockets.GetMap["mempool/new-tx-id"]
+	cb := node_http.HttpServer.ApiWebsockets.GetMap["mempool/new-tx-id"]
 
 	index, page := 0, 0
 	count := config.API_MEMPOOL_MAX_TRANSACTIONS
@@ -50,10 +46,4 @@ func (self *MempoolSync) DownloadMempool(conn *connection.AdvancedConnection) (e
 	}
 
 	return
-}
-
-func NewMempoolSync(websockets *websocks.Websockets) *MempoolSync {
-	return &MempoolSync{
-		websockets: websockets,
-	}
 }

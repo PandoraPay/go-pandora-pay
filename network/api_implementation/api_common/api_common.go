@@ -11,7 +11,6 @@ import (
 	"pandora-pay/mempool"
 	"pandora-pay/network/api_implementation/api_common/api_delegator_node"
 	"pandora-pay/network/api_implementation/api_common/api_faucet"
-	"pandora-pay/network/known_nodes"
 	"pandora-pay/wallet"
 	"time"
 )
@@ -26,7 +25,6 @@ type APICommon struct {
 	mempool                   *mempool.Mempool
 	chain                     *blockchain.Blockchain
 	wallet                    *wallet.Wallet
-	knownNodes                *known_nodes.KnownNodes
 	localChain                *generics.Value[*APIBlockchain]
 	localChainSync            *generics.Value[*blockchain_sync.BlockchainSyncData]
 	Faucet                    *api_faucet.Faucet
@@ -61,7 +59,7 @@ func (api *APICommon) readLocalBlockchainSync(newLocalSync *blockchain_sync.Bloc
 	api.localChainSync.Store(newLocalSync)
 }
 
-func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, apiStore *APIStore) (api *APICommon, err error) {
+func NewAPICommon(mempool *mempool.Mempool, chain *blockchain.Blockchain, wallet *wallet.Wallet, apiStore *APIStore) (api *APICommon, err error) {
 
 	var faucet *api_faucet.Faucet
 	if config.NETWORK_SELECTED == config.TEST_NET_NETWORK_BYTE || config.NETWORK_SELECTED == config.DEV_NET_NETWORK_BYTE {
@@ -79,7 +77,6 @@ func NewAPICommon(knownNodes *known_nodes.KnownNodes, mempool *mempool.Mempool, 
 		mempool,
 		chain,
 		wallet,
-		knownNodes,
 		&generics.Value[*APIBlockchain]{},
 		&generics.Value[*blockchain_sync.BlockchainSyncData]{},
 		faucet,
