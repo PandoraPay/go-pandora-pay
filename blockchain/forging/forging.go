@@ -11,8 +11,8 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/recovery"
 )
 
 type Forging struct {
@@ -69,8 +69,8 @@ func (forging *Forging) InitializeForging(createForgingTransactions func(*block_
 
 func (forging *Forging) StartForging() bool {
 
-	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL {
-		gui.GUI.Warning(`Staking was not started as "--consensus=full" is missing`)
+	if config.NODE_CONSENSUS != config.NODE_CONSENSUS_TYPE_FULL {
+		gui.GUI.Warning(`Staking was not started as "--node-consensus=full" is missing`)
 		return false
 	}
 

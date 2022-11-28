@@ -23,8 +23,8 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/advanced_buffers"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"pandora-pay/recovery"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )
@@ -143,13 +143,13 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 		dataStorage := data_storage.NewDataStorage(writer)
 
-		if config.CONSENSUS == config.CONSENSUS_TYPE_FULL {
+		if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL {
 			if err = chain.initializeNewChain(chainData, dataStorage); err != nil {
 				return
 			}
 		}
 
-		if config.SEED_WALLET_NODES_INFO {
+		if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 			if err = saveAssetsInfo(dataStorage.Asts); err != nil {
 				return
 			}
@@ -167,7 +167,7 @@ func (chain *Blockchain) init() (*BlockchainData, error) {
 
 func (chain *Blockchain) createNextBlockForForging(chainData *BlockchainData, newWork bool) {
 
-	if config.CONSENSUS != config.CONSENSUS_TYPE_FULL {
+	if config.NODE_CONSENSUS != config.NODE_CONSENSUS_TYPE_FULL {
 		return
 	}
 

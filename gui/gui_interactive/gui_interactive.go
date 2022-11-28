@@ -5,7 +5,6 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"os"
-	"pandora-pay/gui/gui_interface"
 	"pandora-pay/gui/gui_logger"
 	"pandora-pay/helpers/generics"
 	"time"
@@ -20,7 +19,6 @@ type GUIInteractiveData struct {
 }
 
 type GUIInteractive struct {
-	gui_interface.GUIInterface
 	logger *gui_logger.GUILogger
 
 	cmd     *widgets.List

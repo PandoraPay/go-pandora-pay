@@ -5,12 +5,10 @@ import (
 	"github.com/blang/semver/v4"
 	"math/big"
 	"math/rand"
-	"pandora-pay/config/config_auth"
+	"pandora-pay/config/arguments"
 	"pandora-pay/config/config_forging"
 	"pandora-pay/config/config_nodes"
-	"pandora-pay/config/globals"
 	"runtime"
-	"strconv"
 	"time"
 )
 
@@ -61,18 +59,6 @@ var (
 	NETWORK_SELECTED_NAME            = MAIN_NET_NETWORK_NAME
 	NETWORK_SELECTED_SEEDS           = MAIN_NET_SEED_NODES
 	NETWORK_SELECTED_DELEGATOR_NODES = config_nodes.MAIN_NET_DELEGATOR_NODES
-	WEBSOCKETS_NETWORK_CLIENTS_MAX   = int64(50)
-	WEBSOCKETS_NETWORK_SERVER_MAX    = int64(500)
-)
-
-const (
-	WEBSOCKETS_MAX_READ_THREADS                   = 5
-	WEBSOCKETS_PONG_WAIT                          = 60 * time.Second // Time allowed to read the next pong message from the peer.
-	WEBSOCKETS_PING_INTERVAL                      = (WEBSOCKETS_PONG_WAIT * 8) / 10
-	WEBSOCKETS_MAX_READ                           = BLOCK_MAX_SIZE + 5*1024
-	WEBSOCKETS_MAX_SUBSCRIPTIONS                  = 30
-	WEBSOCKETS_INCREASE_KNOWN_NODE_SCORE_INTERVAL = 1 * time.Minute
-	WEBSOCKETS_CONCURRENT_NEW_CONENCTIONS         = 5
 )
 
 var (
@@ -89,33 +75,26 @@ var (
 )
 
 var (
+	NODE_PROVIDE_EXTENDED_INFO_APP bool
+	NODE_CONSENSUS                 NodeConsensusType = NODE_CONSENSUS_TYPE_FULL
+)
+
+var (
 	INSTANCE    = ""
 	INSTANCE_ID = 0
 )
 
-var (
-	CONSENSUS              ConsensusType = CONSENSUS_TYPE_FULL
-	SEED_WALLET_NODES_INFO bool
-)
-
-var (
-	NETWORK_ADDRESS_URL_STRING           string
-	NETWORK_WEBSOCKET_ADDRESS_URL_STRING string
-	NETWORK_KNOWN_NODES_LIMIT            int32 = 5000
-	NETWORK_KNOWN_NODES_LIST_RETURN            = 100
-)
-
 func InitConfig() (err error) {
 
-	if globals.Arguments["--network"] == "mainnet" {
+	if arguments.Arguments["--network"] == "mainnet" {
 
-	} else if globals.Arguments["--network"] == "testnet" {
+	} else if arguments.Arguments["--network"] == "testnet" {
 		NETWORK_SELECTED = TEST_NET_NETWORK_BYTE
 		NETWORK_SELECTED_SEEDS = TEST_NET_SEED_NODES
 		NETWORK_SELECTED_DELEGATOR_NODES = config_nodes.TEST_NET_DELEGATOR_NODES
 		NETWORK_SELECTED_NAME = TEST_NET_NETWORK_NAME
 		NETWORK_SELECTED_BYTE_PREFIX = TEST_NET_NETWORK_BYTE_PREFIX
-	} else if globals.Arguments["--network"] == "devnet" {
+	} else if arguments.Arguments["--network"] == "devnet" {
 		NETWORK_SELECTED = DEV_NET_NETWORK_BYTE
 		NETWORK_SELECTED_SEEDS = DEV_NET_SEED_NODES
 		NETWORK_SELECTED_DELEGATOR_NODES = config_nodes.DEV_NET_DELEGATOR_NODES
@@ -125,58 +104,30 @@ func InitConfig() (err error) {
 		return errors.New("selected --network is invalid. Accepted only: mainnet, testnet, devnet")
 	}
 
-	if globals.Arguments["--debug"] == true {
+	if arguments.Arguments["--debug"] == true {
 		DEBUG = true
 	}
 
-	if globals.Arguments["--tcp-max-clients"] != nil {
-		if WEBSOCKETS_NETWORK_CLIENTS_MAX, err = strconv.ParseInt(globals.Arguments["--tcp-max-clients"].(string), 10, 64); err != nil {
-			return
-		}
+	if arguments.Arguments["--light-computations"] == true {
+		LIGHT_COMPUTATIONS = true
 	}
 
-	if globals.Arguments["--tcp-max-server-sockets"] != nil {
-		if WEBSOCKETS_NETWORK_SERVER_MAX, err = strconv.ParseInt(globals.Arguments["--tcp-max-server-sockets"].(string), 10, 64); err != nil {
-			return
-		}
-	}
-
-	SEED_WALLET_NODES_INFO = false
-	switch globals.Arguments["--consensus"] {
+	NODE_PROVIDE_EXTENDED_INFO_APP = false
+	switch arguments.Arguments["--node-consensus"] {
 	case "full":
-		CONSENSUS = CONSENSUS_TYPE_FULL
-		if globals.Arguments["--seed-wallet-nodes-info"] == "true" {
-			SEED_WALLET_NODES_INFO = true
+		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_FULL
+		if arguments.Arguments["--node-provide-extended-info-app"] == "true" {
+			NODE_PROVIDE_EXTENDED_INFO_APP = true
 		}
-	case "wallet":
-		CONSENSUS = CONSENSUS_TYPE_WALLET
+	case "app":
+		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_APP
 	case "none":
-		CONSENSUS = CONSENSUS_TYPE_NONE
+		NODE_CONSENSUS = NODE_CONSENSUS_TYPE_NONE
 	default:
 		return errors.New("invalid consensus argument")
 	}
 
-	if globals.Arguments["--light-computations"] == true {
-		LIGHT_COMPUTATIONS = true
-	}
-
-	if NETWORK_SELECTED == TEST_NET_NETWORK_BYTE || NETWORK_SELECTED == DEV_NET_NETWORK_BYTE {
-
-		if globals.Arguments["--hcaptcha-secret"] != nil {
-			HCAPTCHA_SECRET_KEY = globals.Arguments["--hcaptcha-secret"].(string)
-		}
-
-		if HCAPTCHA_SECRET_KEY != "" && globals.Arguments["--faucet-testnet-enabled"] == "true" {
-			FAUCET_TESTNET_ENABLED = true
-		}
-
-	}
-
 	if err = config_nodes.InitConfig(); err != nil {
-		return
-	}
-
-	if err = config_auth.InitConfig(); err != nil {
 		return
 	}
 

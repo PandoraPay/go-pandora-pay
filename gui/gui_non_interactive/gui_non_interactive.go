@@ -2,14 +2,12 @@ package gui_non_interactive
 
 import (
 	"context"
-	"pandora-pay/gui/gui_interface"
 	"pandora-pay/gui/gui_logger"
 	"runtime"
 	"sync"
 )
 
 type GUINonInteractive struct {
-	gui_interface.GUIInterface
 	logger       *gui_logger.GUILogger
 	colorError   string
 	colorWarning string
@@ -48,4 +46,26 @@ func (g *GUINonInteractive) OutputWrite(any ...interface{}) {
 }
 
 func (g *GUINonInteractive) CommandDefineCallback(Text string, callback func(string, context.Context) error, useIt bool) {
+}
+
+func (g *GUINonInteractive) OutputReadBool(text string, allowEmpty bool, emptyValue bool) bool {
+	return false
+}
+func (g *GUINonInteractive) OutputReadBytes(text string, validateCb func([]byte) bool) (data []byte) {
+	return
+}
+func (g *GUINonInteractive) OutputReadFilename(text, extension string, allowEmpty bool) string {
+	return ""
+}
+func (g *GUINonInteractive) OutputReadInt(text string, allowEmpty bool, emptyValue int, validateCb func(int) bool) int {
+	return 0
+}
+func (g *GUINonInteractive) OutputReadUint64(text string, allowEmpty bool, emptyValue uint64, validateCb func(uint64) bool) uint64 {
+	return 0
+}
+func (g *GUINonInteractive) OutputReadFloat64(text string, allowEmpty bool, emptyValue float64, validateCb func(float64) bool) float64 {
+	return 0
+}
+func (g *GUINonInteractive) OutputReadString(text string) string {
+	return ""
 }

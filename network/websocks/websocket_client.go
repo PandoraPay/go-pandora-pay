@@ -7,16 +7,14 @@ import (
 )
 
 type WebsocketClient struct {
-	knownNode  *known_node.KnownNodeScored
-	conn       *connection.AdvancedConnection
-	websockets *Websockets
+	knownNode *known_node.KnownNodeScored
+	conn      *connection.AdvancedConnection
 }
 
-func NewWebsocketClient(websockets *Websockets, knownNode *known_node.KnownNodeScored) (*WebsocketClient, error) {
+func (this *websocketsType) NewWebsocketClient(knownNode *known_node.KnownNodeScored) (*WebsocketClient, error) {
 
 	wsClient := &WebsocketClient{
-		knownNode:  knownNode,
-		websockets: websockets,
+		knownNode, nil,
 	}
 
 	c, err := websock.Dial(knownNode.URL)
@@ -24,7 +22,7 @@ func NewWebsocketClient(websockets *Websockets, knownNode *known_node.KnownNodeS
 		return nil, err
 	}
 
-	if wsClient.conn, err = websockets.NewConnection(c, knownNode.URL, knownNode, false); err != nil {
+	if wsClient.conn, err = this.NewConnection(c, knownNode.URL, knownNode, false); err != nil {
 		return nil, err
 	}
 

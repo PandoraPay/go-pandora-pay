@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"pandora-pay/blockchain/transactions/transaction"
 	"pandora-pay/helpers/advanced_buffers"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
+	"pandora-pay/txs_validator"
 )
 
 func (queue *BlockchainUpdatesQueue) processBlockchainUpdateNotifications() {
@@ -55,7 +56,7 @@ func (queue *BlockchainUpdatesQueue) processBlockchainUpdateMempool() {
 					if err = tx.Deserialize(advanced_buffers.NewBufferReader(txData)); err != nil {
 						return
 					}
-					if err = queue.txsValidator.MarkAsValidatedTx(tx); err != nil {
+					if err = txs_validator.TxsValidator.MarkAsValidatedTx(tx); err != nil {
 						return
 					}
 

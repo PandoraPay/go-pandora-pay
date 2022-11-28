@@ -1,7 +1,7 @@
 package config_nodes
 
 import (
-	"pandora-pay/config/globals"
+	"pandora-pay/config/arguments"
 	"strconv"
 )
 
@@ -67,17 +67,17 @@ var (
 
 func InitConfig() (err error) {
 
-	if globals.Arguments["--delegates-maximum"] != nil {
-		if DELEGATES_MAXIMUM, err = strconv.Atoi(globals.Arguments["--delegates-maximum"].(string)); err != nil {
+	if arguments.Arguments["--delegates-maximum"] != nil {
+		if DELEGATES_MAXIMUM, err = strconv.Atoi(arguments.Arguments["--delegates-maximum"].(string)); err != nil {
 			return
 		}
 	}
 
-	if globals.Arguments["--delegator-enabled"] == "true" {
+	if arguments.Arguments["--delegator-enabled"] == "true" {
 		DELEGATOR_ENABLED = true
 	}
 
-	if globals.Arguments["--delegator-require-auth"] == "true" {
+	if arguments.Arguments["--delegator-require-auth"] == "true" {
 		DELEGATOR_REQUIRE_AUTH = true
 	}
 

@@ -49,7 +49,7 @@ buildOutput+=".wasm"
 echo ${buildOutput}
 
 go version
-(cd ${src} && GOOS=js GOARCH=wasm go build -ldflags "-X ${buildFlag}=${gitVersionShort}" -o ${buildOutput} )
+(cd ${src} && GOOS=js GOARCH=wasm go build -ldflags "-s -w -X ${buildFlag}=${gitVersionShort}" -o ${buildOutput} )
 
 buildOutput=${src}${buildOutput}
 

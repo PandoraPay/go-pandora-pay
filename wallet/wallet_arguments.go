@@ -3,7 +3,7 @@ package wallet
 import (
 	"encoding/base64"
 	"errors"
-	"pandora-pay/config/globals"
+	"pandora-pay/config/arguments"
 	"pandora-pay/wallet/wallet_address"
 	"strconv"
 	"strings"
@@ -11,13 +11,13 @@ import (
 
 func (wallet *Wallet) ProcessWalletArguments() (err error) {
 
-	if mnemonic := globals.Arguments["--wallet-import-secret-mnemonic"]; mnemonic != nil {
+	if mnemonic := arguments.Arguments["--wallet-import-secret-mnemonic"]; mnemonic != nil {
 		if err = wallet.ImportMnemonic(mnemonic.(string)); err != nil {
 			return
 		}
 	}
 
-	if entropy := globals.Arguments["--wallet-import-secret-entropy"]; entropy != nil {
+	if entropy := arguments.Arguments["--wallet-import-secret-entropy"]; entropy != nil {
 		var bytes []byte
 		if bytes, err = base64.StdEncoding.DecodeString(entropy.(string)); err != nil {
 			return
@@ -27,7 +27,7 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 	}
 
-	if str := globals.Arguments["--wallet-encrypt"]; str != nil {
+	if str := arguments.Arguments["--wallet-encrypt"]; str != nil {
 		v := strings.Split(str.(string), ",")
 
 		var diff int
@@ -40,19 +40,19 @@ func (wallet *Wallet) ProcessWalletArguments() (err error) {
 		}
 	}
 
-	if password := globals.Arguments["--wallet-decrypt"]; password != nil {
+	if password := arguments.Arguments["--wallet-decrypt"]; password != nil {
 		if err = wallet.loadWallet(password.(string), true); err != nil {
 			return
 		}
 	}
 
-	if globals.Arguments["--wallet-remove-encryption"] == true {
+	if arguments.Arguments["--wallet-remove-encryption"] == true {
 		if err = wallet.Encryption.RemoveEncryption(); err != nil {
 			return
 		}
 	}
 
-	if str := globals.Arguments["--wallet-export-shared-staked-address"]; str != nil {
+	if str := arguments.Arguments["--wallet-export-shared-staked-address"]; str != nil {
 		v := strings.Split(str.(string), ",")
 
 		var addr *wallet_address.WalletAddress

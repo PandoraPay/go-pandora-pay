@@ -23,7 +23,7 @@ you can also create an account on hcaptcha
             ```      
         - restart tor `sudo service tor restart`
         - copy your onion address `sudo nano /var/lib/tor/pandora_pay_hidden_service/`
-        - use the parameter `--tor-onion="YOUR_ONION_ADDRESS_FROM_ABOVE"`
+        - use the parameter `--tcp-server-url="http://YOUR_ONION_ADDRESS_FROM_ABOVE"`
 
 #### Running testnet script
 

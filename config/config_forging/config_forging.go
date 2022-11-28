@@ -1,6 +1,6 @@
 package config_forging
 
-import "pandora-pay/config/globals"
+import "pandora-pay/config/arguments"
 
 var (
 	FORGING_ENABLED = true
@@ -8,7 +8,7 @@ var (
 
 func InitConfig() (err error) {
 
-	if globals.Arguments["--forging"] == false {
+	if arguments.Arguments["--forging"] == false {
 		FORGING_ENABLED = false
 	}
 

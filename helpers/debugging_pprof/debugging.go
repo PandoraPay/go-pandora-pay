@@ -5,7 +5,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"pandora-pay/config"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
 	"strconv"
 )
 

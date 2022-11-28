@@ -9,8 +9,9 @@ type AdvancedConnectionMessage struct {
 }
 
 type AdvancedConnectionReply struct {
-	Out []byte
-	Err error
+	Out     []byte
+	Err     error
+	Timeout bool
 }
 
 type UUID uint64

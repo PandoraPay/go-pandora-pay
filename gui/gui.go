@@ -8,7 +8,6 @@ import (
 
 var GUI gui_interface.GUIInterface
 
-//test
 func InitGUI() (err error) {
 
 	if err = create_gui(); err != nil {

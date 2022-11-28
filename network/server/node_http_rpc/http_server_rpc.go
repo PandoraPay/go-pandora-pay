@@ -3,12 +3,8 @@ package node_http_rpc
 import (
 	"github.com/gorilla/rpc"
 	"net/http"
-	"pandora-pay/network/api/api_common"
+	"pandora-pay/network/api_implementation/api_common"
 )
-
-type HTTPServerRPCRoutes struct {
-	apiCommon *api_common.APICommon
-}
 
 func InitializeRPC(apiCommon *api_common.APICommon) (err error) {
 

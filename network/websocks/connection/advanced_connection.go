@@ -6,13 +6,13 @@ import (
 	"github.com/blang/semver/v4"
 	"github.com/tevino/abool"
 	"github.com/vmihailenco/msgpack/v5"
-	"pandora-pay/config"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/known_nodes/known_node"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
 	"pandora-pay/network/websocks/websock"
-	"pandora-pay/recovery"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -41,7 +41,7 @@ type AdvancedConnection struct {
 	InitializedStatus        InitializedStatusType //use the mutex
 	InitializedStatusMutex   *sync.Mutex
 	IsClosed                 *abool.AtomicBool
-	getMap                   map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error)
+	getMap                   map[string]func(conn *AdvancedConnection, values []byte) (any, error)
 	answerMap                map[uint32]chan *advanced_connection_types.AdvancedConnectionReply
 	answerMapLock            *sync.Mutex
 	Subscriptions            *Subscriptions
@@ -52,7 +52,7 @@ type AdvancedConnection struct {
 }
 
 func (c *AdvancedConnection) GetTimeout() time.Duration {
-	return config.WEBSOCKETS_TIMEOUT
+	return network_config.WEBSOCKETS_TIMEOUT
 }
 
 func (c *AdvancedConnection) Close() error {
@@ -78,7 +78,7 @@ func (c *AdvancedConnection) connSendMessage(message any, ctxDuration time.Durat
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
-	c.Conn.SetWriteDeadline(time.Now().Add(generics.Max(ctxDuration, config.WEBSOCKETS_TIMEOUT)))
+	c.Conn.SetWriteDeadline(time.Now().Add(generics.Max(ctxDuration, network_config.WEBSOCKETS_TIMEOUT)))
 	return c.Conn.WriteMessage(websock.BinaryMessage, data)
 }
 
@@ -95,7 +95,7 @@ func (c *AdvancedConnection) sendNow(replyBackId uint32, name []byte, data []byt
 
 func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, ctxParent context.Context, ctxDuration time.Duration) *advanced_connection_types.AdvancedConnectionReply {
 
-	ctx, cancel := context.WithTimeout(helpers.GetContext(ctxParent), generics.Max(ctxDuration, config.WEBSOCKETS_TIMEOUT))
+	ctx, cancel := context.WithTimeout(helpers.GetContext(ctxParent), generics.Max(ctxDuration, network_config.WEBSOCKETS_TIMEOUT))
 	defer cancel()
 
 	replyBackId := atomic.AddUint32(&c.answerCounter, 1)
@@ -104,13 +104,16 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 
 	defer func() {
 
+		closeCn := false
 		c.answerMapLock.Lock()
 		if c.answerMap[replyBackId] != nil {
 			delete(c.answerMap, replyBackId)
+			closeCn = true
 		}
 		c.answerMapLock.Unlock()
-
-		close(eventCn)
+		if closeCn {
+			close(eventCn)
+		}
 	}()
 
 	message := &advanced_connection_types.AdvancedConnectionMessage{
@@ -126,16 +129,16 @@ func (c *AdvancedConnection) sendNowAwait(name []byte, data []byte, reply bool, 
 	c.answerMapLock.Unlock()
 
 	if err := c.connSendMessage(message, ctxDuration); err != nil {
-		return &advanced_connection_types.AdvancedConnectionReply{nil, err}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, err, false}
 	}
 
 	select {
 	case out := <-eventCn:
 		return out
 	case <-c.Closed:
-		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout Closed")}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout Closed"), true}
 	case <-ctx.Done():
-		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout")}
+		return &advanced_connection_types.AdvancedConnectionReply{nil, errors.New("Timeout"), true}
 	}
 }
 
@@ -234,6 +237,9 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 		c.answerMapLock.Lock()
 		cn := c.answerMap[message.ReplyId]
+		if cn != nil {
+			delete(c.answerMap, message.ReplyId)
+		}
 		c.answerMapLock.Unlock()
 
 		if cn != nil {
@@ -247,10 +253,10 @@ func (c *AdvancedConnection) processRead(message *advanced_connection_types.Adva
 
 func (c *AdvancedConnection) ReadPump() {
 
-	c.Conn.SetReadLimit(int64(config.WEBSOCKETS_MAX_READ))
-	c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
+	c.Conn.SetReadLimit(int64(network_config.WEBSOCKETS_MAX_READ))
+	c.Conn.SetReadDeadline(time.Now().Add(network_config.WEBSOCKETS_PONG_WAIT))
 	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(config.WEBSOCKETS_PONG_WAIT))
+		c.Conn.SetReadDeadline(time.Now().Add(network_config.WEBSOCKETS_PONG_WAIT))
 		return nil
 	})
 	for {
@@ -263,7 +269,7 @@ func (c *AdvancedConnection) ReadPump() {
 
 		recovery.SafeGo(func() {
 			message := &advanced_connection_types.AdvancedConnectionMessage{}
-			if err = msgpack.Unmarshal(read, message); err == nil {
+			if err = msgpack.Unmarshal(read, message); err == nil && message != nil {
 				c.processRead(message)
 			}
 		})
@@ -275,7 +281,7 @@ func (c *AdvancedConnection) ReadPump() {
 func (c *AdvancedConnection) connSendPing() (err error) {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
-	c.Conn.SetWriteDeadline(time.Now().Add(config.WEBSOCKETS_TIMEOUT))
+	c.Conn.SetWriteDeadline(time.Now().Add(network_config.WEBSOCKETS_TIMEOUT))
 	if err = c.Conn.WriteMessage(websock.PingMessage, nil); err != nil {
 		return
 	}
@@ -284,7 +290,7 @@ func (c *AdvancedConnection) connSendPing() (err error) {
 
 func (c *AdvancedConnection) SendPings() {
 
-	pingTicker := time.NewTicker(config.WEBSOCKETS_PING_INTERVAL)
+	pingTicker := time.NewTicker(network_config.WEBSOCKETS_PING_INTERVAL)
 	defer pingTicker.Stop()
 
 	for {
@@ -305,7 +311,7 @@ func (c *AdvancedConnection) SendPings() {
 
 func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
-	ticker := time.NewTicker(config.WEBSOCKETS_INCREASE_KNOWN_NODE_SCORE_INTERVAL)
+	ticker := time.NewTicker(network_config.WEBSOCKETS_INCREASE_KNOWN_NODE_SCORE_INTERVAL)
 	defer ticker.Stop()
 
 	for {
@@ -323,7 +329,7 @@ func (c *AdvancedConnection) IncreaseKnownNodeScore() {
 
 }
 
-func NewAdvancedConnection(conn *websock.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (interface{}, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(*AdvancedConnection), onIncreaseKnownNodeScore func(*known_node.KnownNodeScored, int32, bool) bool) (*AdvancedConnection, error) {
+func NewAdvancedConnection(conn *websock.Conn, remoteAddr string, knownNode *known_node.KnownNodeScored, getMap map[string]func(conn *AdvancedConnection, values []byte) (any, error), connectionType bool, newSubscriptionCn, removeSubscriptionCn chan<- *SubscriptionNotification, onClosedConnection func(*AdvancedConnection), onIncreaseKnownNodeScore func(*known_node.KnownNodeScored, int32, bool) bool) (*AdvancedConnection, error) {
 
 	//making sure u is not collided with UUID_ALL and UUID_SKIP_ALL
 	uuid := advanced_connection_types.UUID(atomic.AddUint32(&uuidGenerator, 1))

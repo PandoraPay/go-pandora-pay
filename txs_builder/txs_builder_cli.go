@@ -26,11 +26,11 @@ import (
 	"pandora-pay/txs_builder/wizard"
 )
 
-func (builder *TxsBuilder) showWarningIfNotSyncCLI() {
+func (builder *TxsBuilderType) showWarningIfNotSyncCLI() {
 
 }
 
-func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
+func (builder *TxsBuilderType) readData() (out *wizard.WizardTransactionData) {
 
 	data := &wizard.WizardTransactionData{}
 	str := gui.GUI.OutputReadString("Message (data). Leave empty for none")
@@ -43,7 +43,7 @@ func (builder *TxsBuilder) readData() (out *wizard.WizardTransactionData) {
 	return data
 }
 
-func (builder *TxsBuilder) readAmount(assetId []byte, text string) (amount uint64, err error) {
+func (builder *TxsBuilderType) readAmount(assetId []byte, text string) (amount uint64, err error) {
 
 	amountFloat := gui.GUI.OutputReadFloat64(text, false, 0, nil)
 
@@ -66,7 +66,7 @@ func (builder *TxsBuilder) readAmount(assetId []byte, text string) (amount uint6
 	return
 }
 
-func (builder *TxsBuilder) readAddress(text string, leaveEmpty bool) (address *addresses.Address, err error) {
+func (builder *TxsBuilderType) readAddress(text string, leaveEmpty bool) (address *addresses.Address, err error) {
 
 	for {
 		str := gui.GUI.OutputReadString(text)
@@ -85,7 +85,7 @@ func (builder *TxsBuilder) readAddress(text string, leaveEmpty bool) (address *a
 	return
 }
 
-func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, addressEncoded string, amount uint64, err error) {
+func (builder *TxsBuilderType) readAddressOptional(text string, assetId []byte, allowRandomAddress bool) (address *addresses.Address, addressEncoded string, amount uint64, err error) {
 
 	text2 := text
 	if allowRandomAddress {
@@ -113,12 +113,15 @@ func (builder *TxsBuilder) readAddressOptional(text string, assetId []byte, allo
 	return
 }
 
-func (builder *TxsBuilder) readZetherRingConfiguration() *ZetherRingConfiguration {
+func (builder *TxsBuilderType) readZetherRingConfiguration(payload *TxBuilderCreateZetherTxPayload) {
 
-	configuration := &ZetherRingConfiguration{
-		-1, &ZetherSenderRingType{}, &ZetherRecipientRingType{},
+	payload.RingSize = -1
+	payload.RingConfiguration = &ZetherRingConfiguration{
+		&ZetherSenderRingType{},
+		&ZetherRecipientRingType{},
 	}
-	configuration.RingSize = gui.GUI.OutputReadInt("Ring Size (2,4,8,16,32,64,128,256). Leave empty for random", true, -1, func(value int) bool {
+
+	payload.RingSize = gui.GUI.OutputReadInt("Ring Size (2,4,8,16,32,64,128,256). Leave empty for random", true, -1, func(value int) bool {
 		switch value {
 		case 2, 4, 8, 16, 32, 64, 128, 256:
 			return true
@@ -127,14 +130,13 @@ func (builder *TxsBuilder) readZetherRingConfiguration() *ZetherRingConfiguratio
 		}
 	})
 
-	configuration.RecipientRingType.NewAccounts = gui.GUI.OutputReadInt("Ring New Accounts (0...n-2). Use empty for random", true, -1, func(value int) bool {
+	payload.RingConfiguration.SenderRingType.NewAccounts = gui.GUI.OutputReadInt("Ring New Accounts (0...n-2). Use empty for random", true, -1, func(value int) bool {
 		return value >= 0
 	})
 
-	return configuration
 }
 
-func (builder *TxsBuilder) readFee(assetId []byte) (fee *wizard.WizardTransactionFee) {
+func (builder *TxsBuilderType) readFee(assetId []byte) (fee *wizard.WizardTransactionFee) {
 
 	var err error
 	fee = &wizard.WizardTransactionFee{}
@@ -156,7 +158,7 @@ func (builder *TxsBuilder) readFee(assetId []byte) (fee *wizard.WizardTransactio
 	return
 }
 
-func (builder *TxsBuilder) readZetherFee(assetId []byte) (fee *wizard.WizardZetherTransactionFee) {
+func (builder *TxsBuilderType) readZetherFee(assetId []byte) (fee *wizard.WizardZetherTransactionFee) {
 
 	fee = &wizard.WizardZetherTransactionFee{}
 	fee.WizardTransactionFee = builder.readFee(assetId)
@@ -174,7 +176,7 @@ func (builder *TxsBuilder) readZetherFee(assetId []byte) (fee *wizard.WizardZeth
 	return
 }
 
-func (builder *TxsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
+func (builder *TxsBuilderType) readAsset(text string, allowEmptyAsset bool) []byte {
 	assetId := gui.GUI.OutputReadBytes(text, func(input []byte) bool {
 		return (allowEmptyAsset && len(input) == 0) || len(input) == config_coins.ASSET_LENGTH
 	})
@@ -184,7 +186,7 @@ func (builder *TxsBuilder) readAsset(text string, allowEmptyAsset bool) []byte {
 	return assetId
 }
 
-func (builder *TxsBuilder) initCLI() {
+func (builder *TxsBuilderType) initCLI() {
 
 	cliPrivateTransfer := func(cmd string, ctx context.Context) (err error) {
 		builder.showWarningIfNotSyncCLI()
@@ -203,7 +205,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		builder.readZetherRingConfiguration(txData.Payloads[0])
 		txData.Payloads[0].Data = builder.readData()
 		txData.Payloads[0].Fee = builder.readZetherFee(txData.Payloads[0].Asset)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
@@ -260,7 +262,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		builder.readZetherRingConfiguration(txData.Payloads[0])
 		txData.Payloads[0].Data = builder.readData()
 		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
 
@@ -328,7 +330,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		builder.readZetherRingConfiguration(txData.Payloads[0])
 		txData.Payloads[0].Data = builder.readData()
 		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
 		propagate := gui.GUI.OutputReadBool("Propagate? y/n. Leave empty for yes", true, true)
@@ -371,7 +373,7 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
+		builder.readZetherRingConfiguration(txData.Payloads[0])
 		txData.Payloads[0].Data = builder.readData()
 		txData.Payloads[0].Fee = builder.readZetherFee(config_coins.NATIVE_ASSET_FULL)
 
@@ -441,16 +443,16 @@ func (builder *TxsBuilder) initCLI() {
 			return
 		}
 
-		txData.Payloads[0].RingConfiguration = builder.readZetherRingConfiguration()
-		if err = builder.presetZetherRing(txData.Payloads[0].RingConfiguration); err != nil {
+		builder.readZetherRingConfiguration(txData.Payloads[0])
+		if err = builder.presetZetherRing(txData.Payloads[0]); err != nil {
 			return err
 		}
 
 		txData.Payloads[0].RingConfiguration.SenderRingType.AvoidStakedAccounts = true
 		txData.Payloads[0].RingConfiguration.RecipientRingType.AvoidStakedAccounts = true
 
+		txData.Payloads[1].RingSize = txData.Payloads[0].RingSize
 		txData.Payloads[1].RingConfiguration = &ZetherRingConfiguration{
-			txData.Payloads[0].RingConfiguration.RingSize,
 			&ZetherSenderRingType{false, true, []string{}, 0},
 			&ZetherRecipientRingType{false, true, []string{}, txData.Payloads[0].RingConfiguration.RecipientRingType.NewAccounts},
 		}

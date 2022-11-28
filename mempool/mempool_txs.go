@@ -9,7 +9,7 @@ import (
 	"pandora-pay/gui"
 	"pandora-pay/helpers/generics"
 	"pandora-pay/helpers/multicast"
-	"pandora-pay/recovery"
+	"pandora-pay/helpers/recovery"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -38,7 +38,7 @@ func (self *MempoolTxs) insertTx(tx *mempoolTx) bool {
 }
 
 func (self *MempoolTxs) inserted(tx *mempoolTx) {
-	if config.SEED_WALLET_NODES_INFO {
+	if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 
 		keys := tx.Tx.GetAllKeys()
 		for key := range keys {
@@ -79,7 +79,7 @@ func (self *MempoolTxs) deleteTx(hashStr string) bool {
 }
 
 func (self *MempoolTxs) deleted(tx *mempoolTx, broadcastNotifications, includedInBlockchainNotification bool) {
-	if config.SEED_WALLET_NODES_INFO {
+	if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 
 		keys := tx.Tx.GetAllKeys()
 		for key := range keys {
@@ -157,7 +157,8 @@ func (self *MempoolTxs) Get(txId string) *mempoolTx {
 }
 
 func (self *MempoolTxs) GetAccountTxs(publicKey []byte) []*mempoolTx {
-	if config.SEED_WALLET_NODES_INFO {
+
+	if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 		if foundMap, found := self.accountsMapTxs.Load(string(publicKey)); found {
 
 			foundMap.RLock()

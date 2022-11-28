@@ -4,8 +4,15 @@ import "errors"
 
 type HeapMemory struct {
 	*Heap
+	size  uint64
 	array []*HeapElement
 	dict  map[string]uint64
+}
+
+func (self *HeapMemory) Reset() {
+	self.array = make([]*HeapElement, 0)
+	self.dict = make(map[string]uint64)
+	self.size = 0
 }
 
 func (self *HeapMemory) DeleteByKey(key []byte) error {
@@ -36,11 +43,10 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 
 	heap := &HeapMemory{
 		NewHeap(compare),
+		0,
 		make([]*HeapElement, 0),
 		make(map[string]uint64),
 	}
-
-	size := uint64(0)
 
 	heap.updateElement = func(index uint64, x *HeapElement) error {
 		if index < uint64(len(heap.array)) {
@@ -53,20 +59,20 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 	}
 	heap.addElement = func(x *HeapElement) error {
 		heap.array = append(heap.array, x)
-		heap.dict[string(x.Key)] = size
-		size += 1
+		heap.dict[string(x.Key)] = heap.size
+		heap.size += 1
 		return nil
 	}
 	heap.removeElement = func() (*HeapElement, error) {
 
-		if size == 0 {
+		if heap.size == 0 {
 			return nil, nil
 		}
 
-		size -= 1
+		heap.size -= 1
 
-		x := heap.array[size]
-		heap.array = heap.array[:size]
+		x := heap.array[heap.size]
+		heap.array = heap.array[:heap.size]
 		delete(heap.dict, string(x.Key))
 
 		return x, nil
@@ -78,7 +84,7 @@ func NewHeapMemory(compare func(a, b float64) bool) *HeapMemory {
 		return heap.array[index], nil
 	}
 	heap.GetSize = func() uint64 {
-		return size
+		return heap.size
 	}
 
 	return heap

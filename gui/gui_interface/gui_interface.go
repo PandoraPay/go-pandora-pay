@@ -8,18 +8,18 @@ import (
 	"strconv"
 )
 
-var GUIInterfaceError = errors.New("Ctrl+C Suspended")
+var ErrorGUISuspended = errors.New("Ctrl+C Suspended")
 
 type GUIInterface interface {
 	Close()
-	Log(any ...interface{})
-	Info(any ...interface{})
-	Warning(any ...interface{})
-	Fatal(any ...interface{})
-	Error(any ...interface{})
+	Log(any ...any)
+	Info(any ...any)
+	Warning(any ...any)
+	Fatal(any ...any)
+	Error(any ...any)
 	InfoUpdate(key string, text string)
 	Info2Update(key string, text string)
-	OutputWrite(any ...interface{})
+	OutputWrite(any ...any)
 	CommandDefineCallback(Text string, callback func(string, context.Context) error, useIt bool)
 	OutputReadString(text string) string
 	OutputReadFilename(text, extension string, allowEmpty bool) string
@@ -30,7 +30,7 @@ type GUIInterface interface {
 	OutputReadBytes(text string, validateCb func([]byte) bool) (data []byte)
 }
 
-func ProcessArgument(any ...interface{}) string {
+func ProcessArgument(any ...any) string {
 
 	var s = ""
 

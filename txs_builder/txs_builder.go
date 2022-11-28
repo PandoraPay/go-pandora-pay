@@ -13,27 +13,27 @@ import (
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/txs_builder/wizard"
-	"pandora-pay/txs_validator"
 	"pandora-pay/wallet"
 	"pandora-pay/wallet/wallet_address"
 	"sync"
 )
 
-type TxsBuilder struct {
-	wallet       *wallet.Wallet
-	txsValidator *txs_validator.TxsValidator
-	mempool      *mempool.Mempool
-	lock         *sync.Mutex
+type TxsBuilderType struct {
+	wallet  *wallet.Wallet
+	mempool *mempool.Mempool
+	lock    *sync.Mutex
 }
 
-func (builder *TxsBuilder) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
+var TxsBuilder *TxsBuilderType
+
+func (builder *TxsBuilderType) getNonce(nonce uint64, publicKey []byte, accNonce uint64) uint64 {
 	if nonce != 0 {
 		return nonce
 	}
 	return builder.mempool.GetNonce(publicKey, accNonce)
 }
 
-func (builder *TxsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {
+func (builder *TxsBuilderType) convertFloatAmounts(amounts []float64, ast *asset.Asset) ([]uint64, error) {
 
 	var err error
 
@@ -50,7 +50,7 @@ func (builder *TxsBuilder) convertFloatAmounts(amounts []float64, ast *asset.Ass
 	return amountsFinal, nil
 }
 
-func (builder *TxsBuilder) getWalletAddresses(senders []string) ([]*wallet_address.WalletAddress, error) {
+func (builder *TxsBuilderType) getWalletAddresses(senders []string) ([]*wallet_address.WalletAddress, error) {
 
 	sendersWalletAddress := make([]*wallet_address.WalletAddress, len(senders))
 	var err error
@@ -67,7 +67,7 @@ func (builder *TxsBuilder) getWalletAddresses(senders []string) ([]*wallet_addre
 	return sendersWalletAddress, nil
 }
 
-func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, ctx context.Context, statusCallback func(status string)) (*transaction.Transaction, error) {
+func (builder *TxsBuilderType) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propagateTx, awaitAnswer, awaitBroadcast, validateTx bool, ctx context.Context, statusCallback func(status string)) (*transaction.Transaction, error) {
 
 	if txData.Data == nil {
 		txData.Data = &wizard.WizardTransactionData{nil, false}
@@ -138,16 +138,15 @@ func (builder *TxsBuilder) CreateSimpleTx(txData *TxBuilderCreateSimpleTx, propa
 	return tx, nil
 }
 
-func TxsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool, txsValidator *txs_validator.TxsValidator) (builder *TxsBuilder) {
+func TxsBuilderInit(wallet *wallet.Wallet, mempool *mempool.Mempool) error {
 
-	builder = &TxsBuilder{
+	TxsBuilder = &TxsBuilderType{
 		wallet,
-		txsValidator,
 		mempool,
 		&sync.Mutex{},
 	}
 
-	builder.initCLI()
+	TxsBuilder.initCLI()
 
-	return
+	return nil
 }

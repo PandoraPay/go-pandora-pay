@@ -3,17 +3,17 @@ package websocks
 import (
 	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
-	"pandora-pay/config"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
-	"pandora-pay/network/api/api_common/api_types"
+	"pandora-pay/network/api_code/api_code_types"
+	"pandora-pay/network/api_implementation/api_common/api_types"
+	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks/connection"
 	"pandora-pay/network/websocks/connection/advanced_connection_types"
-	"pandora-pay/recovery"
 )
 
 type WebsocketSubscriptions struct {
-	websockets                        *Websockets
 	chain                             *blockchain.Blockchain
 	mempool                           *mempool.Mempool
 	websocketClosedCn                 chan *connection.AdvancedConnection
@@ -25,10 +25,10 @@ type WebsocketSubscriptions struct {
 	transactionsSubscriptions         map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification
 }
 
-func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockchain, mempool *mempool.Mempool) (subs *WebsocketSubscriptions) {
+func newWebsocketSubscriptions(chain *blockchain.Blockchain, mempool *mempool.Mempool) (subs *WebsocketSubscriptions) {
 
 	subs = &WebsocketSubscriptions{
-		websockets, chain, mempool, make(chan *connection.AdvancedConnection),
+		chain, mempool, make(chan *connection.AdvancedConnection),
 		make(chan *connection.SubscriptionNotification),
 		make(chan *connection.SubscriptionNotification),
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
@@ -37,18 +37,18 @@ func newWebsocketSubscriptions(websockets *Websockets, chain *blockchain.Blockch
 		make(map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification),
 	}
 
-	if config.SEED_WALLET_NODES_INFO {
+	if network_config.NETWORK_ENABLE_SUBSCRIPTIONS {
 		recovery.SafeGo(subs.processSubscriptions)
 	}
 
 	return
 }
 
-func (this *WebsocketSubscriptions) send(subscriptionType api_types.SubscriptionType, apiRoute []byte, key []byte, list map[advanced_connection_types.UUID]*connection.SubscriptionNotification, element helpers.SerializableInterface, elementBytes []byte, extra interface{}) {
+func (this *WebsocketSubscriptions) send(subscriptionType api_code_types.SubscriptionType, apiRoute []byte, key []byte, list map[advanced_connection_types.UUID]*connection.SubscriptionNotification, element helpers.SerializableInterface, elementBytes []byte, extra interface{}) {
 
 	var err error
 	var extraMarshalled []byte
-	var serialized, marshalled *api_types.APISubscriptionNotification
+	var serialized, marshalled *api_code_types.APISubscriptionNotification
 
 	if extra != nil {
 		if extraMarshalled, err = msgpack.Marshal(extra); err != nil {
@@ -63,7 +63,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 			continue
 		}
 
-		if subNot.Subscription.ReturnType == api_types.RETURN_SERIALIZED {
+		if subNot.Subscription.ReturnType == api_code_types.RETURN_SERIALIZED {
 			var bytes []byte
 			if element != nil {
 				bytes = helpers.SerializeToBytes(element)
@@ -72,10 +72,10 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 			}
 
 			if serialized == nil {
-				serialized = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
+				serialized = &api_code_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
 			_ = subNot.Conn.SendJSON(apiRoute, serialized, 0)
-		} else if subNot.Subscription.ReturnType == api_types.RETURN_JSON {
+		} else if subNot.Subscription.ReturnType == api_code_types.RETURN_JSON {
 			if marshalled == nil {
 				var bytes []byte
 				if element != nil {
@@ -85,7 +85,7 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 				} else {
 					bytes = elementBytes
 				}
-				marshalled = &api_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
+				marshalled = &api_code_types.APISubscriptionNotification{subscriptionType, key, bytes, extraMarshalled}
 			}
 			_ = subNot.Conn.SendJSON(apiRoute, marshalled, 0)
 		}
@@ -93,21 +93,21 @@ func (this *WebsocketSubscriptions) send(subscriptionType api_types.Subscription
 	}
 }
 
-func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_types.SubscriptionType) (subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification) {
+func (this *WebsocketSubscriptions) getSubsMap(subscriptionType api_code_types.SubscriptionType) (subsMap map[string]map[advanced_connection_types.UUID]*connection.SubscriptionNotification) {
 	switch subscriptionType {
-	case api_types.SUBSCRIPTION_ACCOUNT, api_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_types.SUBSCRIPTION_REGISTRATION:
+	case api_code_types.SUBSCRIPTION_ACCOUNT, api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT, api_code_types.SUBSCRIPTION_REGISTRATION:
 		subsMap = this.accountsSubscriptions
-	case api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
+	case api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS:
 		subsMap = this.accountsTransactionsSubscriptions
-	case api_types.SUBSCRIPTION_ASSET:
+	case api_code_types.SUBSCRIPTION_ASSET:
 		subsMap = this.assetsSubscriptions
-	case api_types.SUBSCRIPTION_TRANSACTION:
+	case api_code_types.SUBSCRIPTION_TRANSACTION:
 		subsMap = this.transactionsSubscriptions
 	}
 	return
 }
 
-func (this *WebsocketSubscriptions) removeConnection(conn *connection.AdvancedConnection, subscriptionType api_types.SubscriptionType) {
+func (this *WebsocketSubscriptions) removeConnection(conn *connection.AdvancedConnection, subscriptionType api_code_types.SubscriptionType) {
 
 	subsMap := this.getSubsMap(subscriptionType)
 
@@ -180,7 +180,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 							index = v.Element.GetIndex()
 						}
 
-						this.send(api_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationAccountExtra{
+						this.send(api_code_types.SUBSCRIPTION_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationAccountExtra{
 							accs.Asset,
 							index,
 						})
@@ -196,7 +196,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 						index = v.Element.GetIndex()
 					}
 
-					this.send(api_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationPlainAccExtra{
+					this.send(api_code_types.SUBSCRIPTION_PLAIN_ACCOUNT, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationPlainAccExtra{
 						index,
 					})
 				}
@@ -210,7 +210,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 						index = v.Element.GetIndex()
 					}
 
-					this.send(api_types.SUBSCRIPTION_ASSET, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationAssetExtra{
+					this.send(api_code_types.SUBSCRIPTION_ASSET, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationAssetExtra{
 						index,
 					})
 				}
@@ -224,7 +224,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 						index = v.Element.GetIndex()
 					}
 
-					this.send(api_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationRegistrationExtra{
+					this.send(api_code_types.SUBSCRIPTION_REGISTRATION, []byte("sub/notify"), []byte(k), list, v.Element, nil, &api_types.APISubscriptionNotificationRegistrationExtra{
 						index,
 					})
 				}
@@ -238,7 +238,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 			for _, v := range txsUpdates {
 				for _, key := range v.Keys {
 					if list := this.accountsTransactionsSubscriptions[string(key.PublicKey)]; list != nil {
-						this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKey, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
+						this.send(api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), key.PublicKey, list, nil, v.TxHash, &api_types.APISubscriptionNotificationAccountTxExtra{
 							Blockchain: &api_types.APISubscriptionNotificationAccountTxExtraBlockchain{
 								v.Inserted, key.TxsCount, v.BlockHeight, v.BlockTimestamp, v.Height,
 							},
@@ -247,7 +247,7 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				}
 
 				if list := this.transactionsSubscriptions[v.TxHashStr]; list != nil {
-					this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+					this.send(api_code_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), v.TxHash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
 						Blockchain: &api_types.APISubscriptionNotificationTxExtraBlockchain{
 							v.Inserted, v.BlockHeight, v.BlockTimestamp, v.Height,
 						},
@@ -262,14 +262,14 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 
 			for key := range txUpdate.Keys {
 				if list := this.accountsTransactionsSubscriptions[key]; list != nil {
-					this.send(api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
+					this.send(api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS, []byte("sub/notify"), []byte(key), list, nil, txUpdate.Tx.Bloom.Hash, &api_types.APISubscriptionNotificationAccountTxExtra{
 						Mempool: &api_types.APISubscriptionNotificationAccountTxExtraMempool{txUpdate.Inserted, txUpdate.IncludedInBlockchainNotification},
 					})
 				}
 			}
 
 			if list := this.transactionsSubscriptions[txUpdate.Tx.Bloom.HashStr]; list != nil {
-				this.send(api_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
+				this.send(api_code_types.SUBSCRIPTION_TRANSACTION, []byte("sub/notify"), txUpdate.Tx.Bloom.Hash, list, nil, nil, &api_types.APISubscriptionNotificationTxExtra{
 					Mempool: &api_types.APISubscriptionNotificationTxExtraMempool{txUpdate.Inserted, txUpdate.IncludedInBlockchainNotification},
 				})
 			}
@@ -279,10 +279,10 @@ func (this *WebsocketSubscriptions) processSubscriptions() {
 				return
 			}
 
-			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_ASSET)
-			this.removeConnection(conn, api_types.SUBSCRIPTION_TRANSACTION)
+			this.removeConnection(conn, api_code_types.SUBSCRIPTION_ACCOUNT)
+			this.removeConnection(conn, api_code_types.SUBSCRIPTION_ACCOUNT_TRANSACTIONS)
+			this.removeConnection(conn, api_code_types.SUBSCRIPTION_ASSET)
+			this.removeConnection(conn, api_code_types.SUBSCRIPTION_TRANSACTION)
 
 		}
 

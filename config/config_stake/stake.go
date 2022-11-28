@@ -1,8 +1,8 @@
 package config_stake
 
 import (
+	"pandora-pay/config/arguments"
 	"pandora-pay/config/config_coins"
-	"pandora-pay/config/globals"
 )
 
 func GetRequiredStake(blockHeight uint64) (requiredStake uint64) {
@@ -18,7 +18,7 @@ func GetRequiredStake(blockHeight uint64) (requiredStake uint64) {
 
 func GetPendingStakeWindow(blockHeight uint64) uint64 {
 
-	if globals.Arguments["--new-devnet"] == true {
+	if arguments.Arguments["--new-devnet"] == true {
 
 		if blockHeight == 0 {
 			return 1

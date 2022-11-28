@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"pandora-pay/config"
 	"pandora-pay/helpers/generics"
+	"pandora-pay/network/network_config"
 	"sync"
 	"time"
 )
@@ -110,7 +110,7 @@ func Dial(url string) (c *Conn, err error) {
 		fmt.Println("Web Socket error")
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.WEBSOCKETS_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), network_config.WEBSOCKETS_TIMEOUT)
 	defer cancel()
 
 	select {
@@ -132,7 +132,7 @@ func (c *Conn) SetPongHandler(cb func(string) error) error {
 				return
 			default:
 				cb("PING")
-				time.Sleep(config.WEBSOCKETS_PING_INTERVAL)
+				time.Sleep(network_config.WEBSOCKETS_PING_INTERVAL)
 			}
 		}
 	}()

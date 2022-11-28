@@ -1,11 +1,13 @@
 package connection
 
-import "pandora-pay/network/api/api_common/api_types"
+import (
+	"pandora-pay/network/api_code/api_code_types"
+)
 
 type Subscription struct {
-	Type       api_types.SubscriptionType
+	Type       api_code_types.SubscriptionType
 	Key        []byte
-	ReturnType api_types.APIReturnType
+	ReturnType api_code_types.APIReturnType
 }
 
 type SubscriptionNotification struct {

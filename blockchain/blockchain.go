@@ -41,7 +41,6 @@ type Blockchain struct {
 	Sync                                    *blockchain_sync.BlockchainSync
 	mempool                                 *mempool.Mempool
 	wallet                                  *wallet.Wallet
-	txsValidator                            *txs_validator.TxsValidator
 	mutex                                   *sync.Mutex //writing mutex
 	updatesQueue                            *BlockchainUpdatesQueue
 	ForgingSolutionCn                       chan *blockchain_types.BlockchainSolution
@@ -65,7 +64,7 @@ func (chain *Blockchain) validateBlocks(blocksComplete []*block_complete.BlockCo
 			return
 		}
 
-		if err = chain.txsValidator.ValidateTxs(blkComplete.Txs); err != nil {
+		if err = txs_validator.TxsValidator.ValidateTxs(blkComplete.Txs); err != nil {
 			return
 		}
 
@@ -403,7 +402,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 
 					//removing unused transactions
-					if config.SEED_WALLET_NODES_INFO {
+					if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 						removeUnusedTransactions(writer, newChainData.TransactionsCount, removedBlocksTransactionsCount)
 					}
 				}
@@ -436,7 +435,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 					}
 				}
 
-				if config.SEED_WALLET_NODES_INFO {
+				if config.NODE_PROVIDE_EXTENDED_INFO_APP {
 					removeTxsInfo(writer, removedTxHashes)
 				}
 
@@ -495,7 +494,7 @@ func (chain *Blockchain) AddBlocks(blocksComplete []*block_complete.BlockComplet
 	return
 }
 
-func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsValidator) (*Blockchain, error) {
+func CreateBlockchain(mempool *mempool.Mempool) (*Blockchain, error) {
 
 	gui.GUI.Log("Blockchain init...")
 
@@ -504,9 +503,8 @@ func CreateBlockchain(mempool *mempool.Mempool, txsValidator *txs_validator.TxsV
 		blockchain_sync.CreateBlockchainSync(),
 		mempool,
 		nil,
-		txsValidator,
 		&sync.Mutex{},
-		createBlockchainUpdatesQueue(txsValidator),
+		createBlockchainUpdatesQueue(),
 		make(chan *blockchain_types.BlockchainSolution),
 		multicast.NewMulticastChannel[uint64](),
 		multicast.NewMulticastChannel[*BlockchainDataUpdate](),
