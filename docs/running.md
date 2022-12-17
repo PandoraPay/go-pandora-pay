@@ -11,6 +11,21 @@ hcaptcha site key must be set in /static/challenge/challenge.html
 
 you can also create an account on hcaptcha
 
+### Installing TLS/SSL Certificates
+
+To install TLS certificates, you need to place the certificates in the application root folder with the following names
+`certificate.crt`
+`certificate.key`
+
+You also need to specify the **domain address** by using the argument `--tcp-server-address="domain.net"`
+
+To get authority certificates, you can use [cerbot](https://certbot.eff.org) (it's easy!) / or [Let's Encrypt](https://letsencrypt.org/)
+
+### Using proxies to connect to the network
+
+tor proxy use `--tcp-proxy="socks5://127.0.0.1:9050"`
+i2p proxy use `--tcp-proxy="socks5://127.0.0.1:4444"`
+
 ### Running the node as a Tor Hidden Server
 1. Install Tor
 2. Configure Tor
@@ -21,9 +36,9 @@ you can also create an account on hcaptcha
             HiddenServiceDir /var/lib/tor/pandora_pay_hidden_service/
             HiddenServicePort 80 127.0.0.1:8080
             ```      
-        - restart tor `sudo service tor restart`
-        - copy your onion address `sudo nano /var/lib/tor/pandora_pay_hidden_service/`
-        - use the parameter `--tcp-server-url="http://YOUR_ONION_ADDRESS_FROM_ABOVE"`
+        - restart tor `sudo service tor restart` 
+        - copy your onion address `sudo cat /var/lib/tor/pandora_pay_hidden_service/hostname`
+        - use the tor address `--tcp-server-url="http://YOUR_ONION_ADDRESS_FROM_ABOVE"`
 
 #### Running testnet script
 
