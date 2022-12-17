@@ -24,6 +24,7 @@ To get authority certificates, you can use [cerbot](https://certbot.eff.org) (it
 ### Using proxies to connect to the network
 
 tor proxy use `--tcp-proxy="socks5://127.0.0.1:9050"`
+
 i2p proxy use `--tcp-proxy="socks5://127.0.0.1:4444"`
 
 ### Running the node as a Tor Hidden Server
