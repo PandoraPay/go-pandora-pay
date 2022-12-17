@@ -23,7 +23,9 @@ func (self *KnownNodesSyncType) DownloadNetworkNodes(conn *connection.AdvancedCo
 	}
 
 	for _, node := range data.Nodes {
-		known_nodes.KnownNodes.AddKnownNode(node.URL, false)
+		if node != nil {
+			known_nodes.KnownNodes.AddKnownNode(node.URL, false)
+		}
 	}
 
 	return nil
