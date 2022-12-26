@@ -326,6 +326,31 @@ func (wallet *Wallet) GenerateKeys(seedIndex uint32, lock bool) ([]byte, []byte,
 	return secretSerialized, key2.Key, key3.Key, nil
 }
 
+func (wallet *Wallet) GenerateNextAddress(lock bool) (*addresses.Address, error) {
+
+	//avoid generating the same address twice
+	if lock {
+		wallet.Lock.RLock()
+		defer wallet.Lock.RUnlock()
+	}
+
+	if !wallet.Loaded {
+		return nil, errors.New("Wallet was not loaded!")
+	}
+
+	_, privateKey, _, err := wallet.GenerateKeys(wallet.SeedIndex, false)
+	if err != nil {
+		return nil, err
+	}
+
+	privKey, err := addresses.NewPrivateKey(privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return privKey.GenerateAddress(false, nil, true, nil, 0, nil)
+}
+
 func (wallet *Wallet) AddNewAddress(lock bool, name string, staked, spendRequired, save bool) (*wallet_address.WalletAddress, error) {
 
 	//avoid generating the same address twice

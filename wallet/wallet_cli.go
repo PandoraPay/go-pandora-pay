@@ -61,6 +61,56 @@ func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddre
 	return sharedStakedAddress, nil
 }
 
+func (wallet *Wallet) CliScanAddresses(cmd string, ctx context.Context) (err error) {
+
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
+
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		dataStorage := data_storage.NewDataStorage(reader)
+
+		for {
+
+			var addr *addresses.Address
+			if addr, err = wallet.GenerateNextAddress(false); err != nil {
+				return
+			}
+
+			var reg *registration.Registration
+			if reg, err = dataStorage.Regs.Get(string(addr.PublicKey)); err != nil {
+				return
+			}
+
+			if reg != nil {
+				if _, err = wallet.AddNewAddress(false, "", reg.Staked, reg.SpendPublicKey != nil, true); err != nil {
+					return
+				}
+				continue
+			}
+
+			var plainAcc *plain_account.PlainAccount
+			if plainAcc, err = dataStorage.PlainAccs.Get(string(addr.PublicKey)); err != nil {
+				return
+			}
+
+			if plainAcc != nil {
+				if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
+					return
+				}
+				continue
+			}
+
+			return
+		}
+
+	}); err != nil {
+		return
+	}
+
+	return
+}
+
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
 
 	type AddressAsset struct {
@@ -661,6 +711,7 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Scan Addresses", wallet.CliScanAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Clear & Create new empty Wallet", cliClearWallet, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic, wallet.Loaded)
