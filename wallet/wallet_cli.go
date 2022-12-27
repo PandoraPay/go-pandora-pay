@@ -17,6 +17,7 @@ import (
 	"pandora-pay/blockchain/data_storage/registrations"
 	"pandora-pay/blockchain/data_storage/registrations/registration"
 	"pandora-pay/blockchain/transactions/transaction/transaction_simple/transaction_simple_extra"
+	"pandora-pay/config"
 	"pandora-pay/config/config_coins"
 	"pandora-pay/cryptography"
 	"pandora-pay/cryptography/crypto"
@@ -58,6 +59,56 @@ func (wallet *Wallet) exportSharedStakedAddress(addr *wallet_address.WalletAddre
 	}
 
 	return sharedStakedAddress, nil
+}
+
+func (wallet *Wallet) CliScanAddresses(cmd string, ctx context.Context) (err error) {
+
+	wallet.Lock.Lock()
+	defer wallet.Lock.Unlock()
+
+	if err = store.StoreBlockchain.DB.View(func(reader store_db_interface.StoreDBTransactionInterface) (err error) {
+
+		dataStorage := data_storage.NewDataStorage(reader)
+
+		for {
+
+			var addr *addresses.Address
+			if addr, err = wallet.GenerateNextAddress(false); err != nil {
+				return
+			}
+
+			var reg *registration.Registration
+			if reg, err = dataStorage.Regs.Get(string(addr.PublicKey)); err != nil {
+				return
+			}
+
+			if reg != nil {
+				if _, err = wallet.AddNewAddress(false, "", reg.Staked, reg.SpendPublicKey != nil, true); err != nil {
+					return
+				}
+				continue
+			}
+
+			var plainAcc *plain_account.PlainAccount
+			if plainAcc, err = dataStorage.PlainAccs.Get(string(addr.PublicKey)); err != nil {
+				return
+			}
+
+			if plainAcc != nil {
+				if _, err = wallet.AddNewAddress(false, "", false, false, true); err != nil {
+					return
+				}
+				continue
+			}
+
+			return
+		}
+
+	}); err != nil {
+		return
+	}
+
+	return
 }
 
 func (wallet *Wallet) CliListAddresses(cmd string, ctx context.Context) (err error) {
@@ -250,7 +301,7 @@ func (wallet *Wallet) initWalletCLI() {
 					return
 				}
 
-				addressStr := walletAddress.GetAddress(isReg)
+				addressStr := walletAddress.GetAddress(isReg) + config.LineBreak
 				lines = append(lines, addressStr)
 			}
 
@@ -437,7 +488,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliClearWallet := func(cmd string, ctx context.Context) (err error) {
 
-		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!\n\n")
+		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!", config.LineBreak, config.LineBreak)
 
 		if !gui.GUI.OutputReadBool("Are you sure you want to clear the existing wallet and get a new one? y/n", false, false) {
 			return
@@ -453,7 +504,7 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	cliImportMnemonic := func(cmd string, ctx context.Context) (err error) {
-		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!\n\n")
+		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!", config.LineBreak, config.LineBreak)
 
 		if !gui.GUI.OutputReadBool("Are you sure you want to clear the existing wallet and import a mnemonic? y/n", false, false) {
 			return
@@ -472,7 +523,7 @@ func (wallet *Wallet) initWalletCLI() {
 
 	cliImportEntropy := func(cmd string, ctx context.Context) (err error) {
 
-		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!\n\n")
+		gui.GUI.OutputWrite("WARNING!!! THIS COMMAND WILL DELETE YOUR EXISTING WALLET!", config.LineBreak, config.LineBreak)
 
 		if !gui.GUI.OutputReadBool("Are you sure you want to clear the existing wallet and import an entropy? y/n", false, false) {
 			return
@@ -567,11 +618,11 @@ func (wallet *Wallet) initWalletCLI() {
 		pub := key.GeneratePublicKey()
 
 		gui.GUI.OutputWrite("PRIVATE KEY", key.Key)
-		gui.GUI.OutputWrite("PUBLIC KEY", pub, "\n\n")
+		gui.GUI.OutputWrite("PUBLIC KEY", pub, config.LineBreak, config.LineBreak)
 
 		if filename := gui.GUI.OutputReadFilename("Path to export", "txt", true); len(filename) > 0 {
 
-			if err = files.WriteFile(filename, fmt.Sprintf("PRIVATE KEY: %s\n", base64.StdEncoding.EncodeToString(key.Key)), fmt.Sprintf("PUBLIC KEY: %s\n", base64.StdEncoding.EncodeToString(pub))); err != nil {
+			if err = files.WriteFile(filename, fmt.Sprintf("PRIVATE KEY: %s %s", base64.StdEncoding.EncodeToString(key.Key), config.LineBreak), fmt.Sprintf("PUBLIC KEY: %s %s", base64.StdEncoding.EncodeToString(pub), config.LineBreak)); err != nil {
 				return
 			}
 
@@ -602,11 +653,11 @@ func (wallet *Wallet) initWalletCLI() {
 			return
 		}
 
-		gui.GUI.OutputWrite("Signature: ", signature, "\n\n")
+		gui.GUI.OutputWrite("Signature: ", signature, config.LineBreak, config.LineBreak)
 
 		if filename := gui.GUI.OutputReadFilename("Path to export", "txt", true); len(filename) > 0 {
 
-			if err = files.WriteFile(filename, fmt.Sprintf("Signature: %s\n", base64.StdEncoding.EncodeToString(signature))); err != nil {
+			if err = files.WriteFile(filename, fmt.Sprintf("Signature: %s %s", base64.StdEncoding.EncodeToString(signature), config.LineBreak)); err != nil {
 				return
 			}
 
@@ -648,8 +699,8 @@ func (wallet *Wallet) initWalletCLI() {
 
 		if filename := gui.GUI.OutputReadFilename("Path to export", "txt", true); len(filename) > 0 {
 
-			if err = files.WriteFile(filename, fmt.Sprintf("Public Key: %s\n", base64.StdEncoding.EncodeToString(pk.GeneratePublicKey())),
-				fmt.Sprintf("Signature: %s\n", base64.StdEncoding.EncodeToString(signature))); err != nil {
+			if err = files.WriteFile(filename, fmt.Sprintf("Public Key: %s %s", base64.StdEncoding.EncodeToString(pk.GeneratePublicKey()), config.LineBreak),
+				fmt.Sprintf("Signature: %s %s", base64.StdEncoding.EncodeToString(signature), config.LineBreak), config.LineBreak); err != nil {
 				return
 			}
 
@@ -660,6 +711,7 @@ func (wallet *Wallet) initWalletCLI() {
 	}
 
 	gui.GUI.CommandDefineCallback("List Addresses", wallet.CliListAddresses, wallet.Loaded)
+	gui.GUI.CommandDefineCallback("Scan Addresses", wallet.CliScanAddresses, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Create New Address", cliCreateNewAddress, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Clear & Create new empty Wallet", cliClearWallet, wallet.Loaded)
 	gui.GUI.CommandDefineCallback("Show Mnemnonic", cliShowMnemonic, wallet.Loaded)

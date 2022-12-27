@@ -10,12 +10,12 @@ import (
 
 func (g *GUIInteractive) logsRender() {
 	g.logs.Lock()
-	ss := strings.Split(g.logs.Text, "\n")
+	ss := strings.Split(g.logs.Text, config.LineBreak)
 	pos := len(ss) - g.logs.Size().Y
 	if pos < 0 {
 		pos = 0
 	}
-	g.logs.Text = strings.Join(ss[pos:], "\n")
+	g.logs.Text = strings.Join(ss[pos:], config.LineBreak)
 	g.logs.Unlock()
 }
 
@@ -29,8 +29,8 @@ func (g *GUIInteractive) message(prefix string, color string, any ...interface{}
 		text = time.Now().Format("15:04:05  ") + text
 	}
 
-	final1 := prefix + " " + text + "\n"
-	final2 := "[" + text + "]" + color + "\n"
+	final1 := prefix + " " + text + config.LineBreak
+	final2 := "[" + text + "]" + color + config.LineBreak
 
 	g.logs.Lock()
 	g.logger.GeneralLog.WriteString(final1)

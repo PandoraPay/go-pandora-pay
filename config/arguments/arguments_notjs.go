@@ -8,7 +8,7 @@ package arguments
 var commands = `PANDORA PAY.
 
 Usage:
-  pandorapay [--pprof] [--network=network] [--debug] [--gui-type=type] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--balance-decryptor-disable-init] [--balance-decryptor-table-size=size] [--tcp-connections-ready=threshold] [--exit] [--skip-init-sync] [--tcp-server-url=url]
+  pandorapay [--pprof] [--network=network] [--debug] [--gui-type=type] [--forging] [--new-devnet] [--run-testnet-script] [--node-name=name] [--tcp-server-port=port] [--tcp-server-address=address] [--tcp-server-auto-tls-certificate] [--tcp-server-tls-cert-file=path] [--tcp-server-tls-key-file=path] [--instance=prefix] [--instance-id=id] [--set-genesis=genesis] [--create-new-genesis=args] [--store-wallet-type=type] [--store-chain-type=type] [--node-consensus=type] [--tcp-max-clients=limit] [--tcp-max-server-sockets=limit] [--node-provide-extended-info-app=bool] [--wallet-encrypt=args] [--wallet-decrypt=password] [--wallet-remove-encryption] [--wallet-export-shared-staked-address=args] [--wallet-import-secret-mnemonic=mnemonic] [--wallet-import-secret-entropy=entropy] [--hcaptcha-secret=args] [--faucet-testnet-enabled=args] [--delegator-enabled=bool] [--delegator-require-auth=bool] [--delegates-maximum=args] [--auth-users=args] [--light-computations] [--balance-decryptor-disable-init] [--balance-decryptor-table-size=size] [--tcp-connections-ready=threshold] [--exit] [--skip-init-sync] [--tcp-server-url=url] [--tcp-proxy=PROXY]
   pandorapay -h | --help
   pandorapay -v | --version
 
@@ -39,6 +39,7 @@ Options:
   --tcp-server-auto-tls-certificate                  If no certificate.crt is provided, this option will generate a valid TLS certificate via autocert package. You still need a valid domain provided and set --tcp-server-address.
   --tcp-server-tls-cert-file=path                    Load TLS certificate file from given path.
   --tcp-server-tls-key-file=path                     Load TLS ke file from given path.
+  --tcp-proxy=proxy                                  Proxy used for network.
   --wallet-import-secret-mnemonic=mnemonic           Import Wallet from a given Mnemonic. It will delete your existing wallet. 
   --wallet-import-secret-entropy=entropy             Import Wallet from a given Entropy. It will delete your existing wallet.
   --wallet-encrypt=args                              Encrypt wallet. Argument must be "password,difficulty".

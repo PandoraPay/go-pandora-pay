@@ -37,6 +37,7 @@ type Command struct {
 
 var commands = []Command{
 	{Name: "Wallet", Text: "List Addresses"},
+	{Name: "Wallet", Text: "Scan Addresses"},
 	{Name: "Wallet", Text: "Create New Address"},
 	{Name: "Wallet", Text: "Clear & Create new empty Wallet"},
 	{Name: "Wallet", Text: "Show Mnemnonic"},
