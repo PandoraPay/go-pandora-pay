@@ -2,9 +2,9 @@ package network
 
 import (
 	"context"
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
 	"pandora-pay/config"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/mempool"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"

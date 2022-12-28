@@ -3,8 +3,8 @@ package settings
 import (
 	"bytes"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/gui"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 )

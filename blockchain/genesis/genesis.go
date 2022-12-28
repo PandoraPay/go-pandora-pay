@@ -3,7 +3,6 @@ package genesis
 import (
 	"encoding/json"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"io/ioutil"
 	"os"
 	"pandora-pay/addresses"
@@ -13,6 +12,7 @@ import (
 	"pandora-pay/config/config_stake"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/wallet/wallet_address/shared_staked"
 	"runtime"
 	"strings"

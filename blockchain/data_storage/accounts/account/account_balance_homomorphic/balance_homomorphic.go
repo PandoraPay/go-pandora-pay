@@ -2,7 +2,7 @@ package account_balance_homomorphic
 
 import (
 	"encoding/json"
-	"github.com/vmihailenco/msgpack/v5"
+	msgpack "github.com/vmihailenco/msgpack/v5"
 	"math/big"
 	"pandora-pay/cryptography/crypto"
 	"pandora-pay/helpers/advanced_buffers"

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/data_storage/accounts/account"
 	"pandora-pay/blockchain/data_storage/assets/asset"
 	"pandora-pay/blockchain/data_storage/plain_accounts/plain_account"
@@ -11,6 +10,7 @@ import (
 	"pandora-pay/builds/webassembly/webassembly_utils"
 	"pandora-pay/config/globals"
 	"pandora-pay/helpers/advanced_buffers"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/api_code/api_code_types"
 	"pandora-pay/network/api_code/api_code_websockets"

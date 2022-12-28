@@ -2,7 +2,7 @@ package data_storage
 
 import (
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/store/hash_map"
 	"pandora-pay/store/store_db/store_db_interface"
 )

@@ -1,9 +1,9 @@
 package websocks
 
 import (
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api_code/api_code_types"

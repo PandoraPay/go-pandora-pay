@@ -3,12 +3,12 @@ package blockchain
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/blockchain_types"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/blockchain/data_storage"
 	"pandora-pay/config"
 	"pandora-pay/helpers"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/store"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"

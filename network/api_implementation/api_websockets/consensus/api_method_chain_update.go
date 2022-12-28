@@ -3,10 +3,10 @@ package consensus
 import (
 	"bytes"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/blockchain/blocks/block_complete"
 	"pandora-pay/cryptography"
 	"pandora-pay/helpers/linked_list"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/network/websocks/connection"
 )
 
