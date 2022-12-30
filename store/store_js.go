@@ -6,7 +6,6 @@ package store
 import (
 	"errors"
 	"pandora-pay/config/arguments"
-	"pandora-pay/store/store_db/store_db_bunt"
 	"pandora-pay/store/store_db/store_db_interface"
 	"pandora-pay/store/store_db/store_db_js"
 	"pandora-pay/store/store_db/store_db_memory"
@@ -18,8 +17,6 @@ func createStoreNow(name string, storeType string) (*Store, error) {
 	var err error
 
 	switch storeType {
-	case "bunt-memory":
-		db, err = store_db_bunt.CreateStoreDBBunt(name, true)
 	case "js":
 		db, err = store_db_js.CreateStoreDBJS(name)
 	case "memory":

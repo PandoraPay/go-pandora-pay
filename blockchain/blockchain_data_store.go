@@ -3,15 +3,15 @@ package blockchain
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/vmihailenco/msgpack/v5"
 	"math"
 	"math/big"
 	"pandora-pay/helpers/advanced_buffers"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/store/store_db/store_db_interface"
 	"strconv"
 )
 
-//chain must be locked before
+// chain must be locked before
 func (chainData *BlockchainData) saveTotalDifficultyExtra(writer store_db_interface.StoreDBTransactionInterface) {
 	key := "totalDifficulty" + strconv.FormatUint(chainData.Height, 10)
 

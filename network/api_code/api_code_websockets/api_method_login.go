@@ -1,7 +1,7 @@
 package api_code_websockets
 
 import (
-	"github.com/vmihailenco/msgpack/v5"
+	"pandora-pay/helpers/msgpack"
 	"pandora-pay/network/network_config/network_config_auth"
 	"pandora-pay/network/websocks/connection"
 )

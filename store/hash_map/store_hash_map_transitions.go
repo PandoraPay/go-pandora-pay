@@ -1,9 +1,9 @@
 package hash_map
 
 import (
-	"github.com/vmihailenco/msgpack/v5"
 	"pandora-pay/helpers"
 	"pandora-pay/helpers/generics"
+	"pandora-pay/helpers/msgpack"
 )
 
 type transactionChange struct {
