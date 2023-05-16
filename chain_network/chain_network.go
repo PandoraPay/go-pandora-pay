@@ -6,7 +6,6 @@ import (
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/mempool"
 	"pandora-pay/network/api_implementation/api_websockets/consensus"
-	"pandora-pay/network/known_nodes_sync"
 	"pandora-pay/network/server/node_http"
 	"pandora-pay/network/websocks"
 	"pandora-pay/network/websocks/connection"
@@ -18,10 +17,14 @@ func continuouslyDownloadChain() {
 
 		for {
 
-			if conn := websocks.Websockets.GetRandomSocket(); conn != nil {
-				data, err := connection.SendJSONAwaitAnswer[consensus.ChainUpdateNotification](conn, []byte("get-chain"), nil, nil, 0)
-				if err == nil {
-					node_http.HttpServer.ApiWebsockets.Consensus.ChainUpdateProcess(conn, data)
+			list := websocks.Websockets.GetAllSockets()
+			for _, conn := range list {
+				if conn.Handshake.Consensus == config.NODE_CONSENSUS_TYPE_FULL {
+					data, err := connection.SendJSONAwaitAnswer[consensus.ChainUpdateNotification](conn, []byte("get-chain"), nil, nil, 0)
+					if err == nil {
+						node_http.HttpServer.ApiWebsockets.Consensus.ChainUpdateProcess(conn, data)
+					}
+					time.Sleep(1 * time.Millisecond)
 				}
 			}
 
@@ -37,35 +40,15 @@ func continuouslyDownloadMempool() {
 
 		for {
 
-			if conn := websocks.Websockets.GetRandomSocket(); conn != nil {
+			list := websocks.Websockets.GetAllSockets()
+			for _, conn := range list {
 				if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.NODE_CONSENSUS_TYPE_FULL {
 					DownloadMempool(conn)
+					time.Sleep(1 * time.Millisecond)
 				}
 			}
 
 			time.Sleep(2000 * time.Millisecond)
-		}
-
-	})
-
-}
-
-func continuouslyDownloadNetworkNodes() {
-
-	recovery.SafeGo(func() {
-
-		for {
-
-			conn := websocks.Websockets.GetRandomSocket()
-			if conn != nil {
-
-				if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL && conn.Handshake.Consensus == config.NODE_CONSENSUS_TYPE_FULL {
-					known_nodes_sync.KnownNodesSync.DownloadNetworkNodes(conn)
-				}
-
-			}
-
-			time.Sleep(10000 * time.Millisecond)
 		}
 
 	})
@@ -105,7 +88,6 @@ func InitChainNetwork(chain *blockchain.Blockchain, mempool *mempool.Mempool) {
 
 	if config.NODE_CONSENSUS == config.NODE_CONSENSUS_TYPE_FULL {
 		continuouslyDownloadMempool()
-		continuouslyDownloadNetworkNodes()
 	}
 
 	syncBlockchainNewConnections()

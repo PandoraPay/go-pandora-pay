@@ -3,6 +3,7 @@ package multicast
 import (
 	"golang.org/x/exp/slices"
 	"pandora-pay/helpers/linked_list"
+	"pandora-pay/helpers/recovery"
 	"sync"
 )
 
@@ -95,7 +96,9 @@ func (self *MulticastChannel[T]) runInternalBroadcast() {
 		self.lock.RUnlock()
 
 		for _, channel := range listeners {
-			channel <- data
+			recovery.Safe(func() { //could be closed
+				channel <- data
+			})
 		}
 	}
 }
