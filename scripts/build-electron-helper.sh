@@ -21,6 +21,6 @@ GOOS=windows GOARCH=arm64 go build -o ${output}-windows-arm64.exe
 #macos
 echo "build darwin..."
 GOOS=darwin GOARCH=amd64 go build -o ${output}-darwin-amd64
-GOOS=darwin GOARCH=amd64 go build -o ${output}-darwin-arm64
+GOOS=darwin GOARCH=arm64 go build -o ${output}-darwin-arm64
 
 echo "build success"
