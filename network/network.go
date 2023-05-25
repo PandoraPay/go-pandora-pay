@@ -109,5 +109,7 @@ func NewNetwork(settings *settings.Settings, chain *blockchain.Blockchain, mempo
 	Network = &networkType{}
 
 	Network.continuouslyConnectingNewPeers()
+	Network.continuouslyDownloadNetworkNodes()
+
 	return nil
 }

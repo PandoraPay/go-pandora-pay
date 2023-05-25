@@ -24,9 +24,16 @@ type Address struct {
 }
 
 func newAddr(network uint64, version AddressVersion, publicKey []byte, staked bool, spendPublicKey []byte, registration []byte, paymentID []byte, paymentAmount uint64, paymentAsset []byte) (*Address, error) {
-	if len(publicKey) != cryptography.PublicKeySize {
-		return nil, errors.New("Invalid PublicKey size")
+
+	switch version {
+	case SIMPLE_PUBLIC_KEY:
+		if len(publicKey) != cryptography.PublicKeySize {
+			return nil, errors.New("Invalid PublicKey size")
+		}
+	default:
+		return nil, errors.New("invalid version")
 	}
+
 	if len(spendPublicKey) != 0 && len(spendPublicKey) != cryptography.PublicKeySize {
 		return nil, errors.New("Invalid Spend Public Key size")
 	}

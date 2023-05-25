@@ -1,16 +1,39 @@
 package network
 
 import (
+	"pandora-pay/config"
 	"pandora-pay/gui"
 	"pandora-pay/helpers/recovery"
 	"pandora-pay/network/banned_nodes"
 	"pandora-pay/network/connected_nodes"
 	"pandora-pay/network/known_nodes"
 	"pandora-pay/network/known_nodes/known_node"
+	"pandora-pay/network/known_nodes_sync"
 	"pandora-pay/network/network_config"
 	"pandora-pay/network/websocks"
 	"time"
 )
+
+func (this *networkType) continuouslyDownloadNetworkNodes() {
+
+	recovery.SafeGo(func() {
+
+		for {
+
+			list := websocks.Websockets.GetAllSockets()
+			for _, conn := range list {
+				if conn.Handshake.Consensus == config.NODE_CONSENSUS_TYPE_FULL {
+					known_nodes_sync.KnownNodesSync.DownloadNetworkNodes(conn)
+				}
+				time.Sleep(1 * time.Millisecond)
+			}
+
+			time.Sleep(10000 * time.Millisecond)
+		}
+
+	})
+
+}
 
 func (this *networkType) continuouslyConnectingNewPeers() {
 
