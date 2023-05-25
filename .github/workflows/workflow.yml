@@ -31,6 +31,7 @@ jobs:
         env:
           GOPROXY: "https://proxy.golang.org"
         run: |
+          go get -t pandora-pay/addresses
           go test -v ./addresses/.
           go test -v ./helpers/.
 
