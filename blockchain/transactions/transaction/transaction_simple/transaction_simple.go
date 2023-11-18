@@ -101,7 +101,7 @@ func (tx *TransactionSimple) Validate() (err error) {
 	}
 
 	switch tx.TxScript {
-	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY, SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
+	case SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY, SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT, SCRIPT_SIMPLE_NOTHING:
 		if tx.Extra == nil {
 			return errors.New("extra is not assigned")
 		}
@@ -152,6 +152,8 @@ func (tx *TransactionSimple) Deserialize(r *advanced_buffers.BufferReader) (err 
 		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraUpdateAssetFeeLiquidity{}
 	case SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
 		tx.Extra = &transaction_simple_extra.TransactionSimpleExtraResolutionConditionalPayment{}
+	case SCRIPT_SIMPLE_NOTHING:
+		tx.EXTRA = &transaction_simple_extra.TransactionSimpleNothingt{}
 	default:
 		return errors.New("INVALID SCRIPT TYPE")
 	}
