@@ -5,6 +5,7 @@ type ScriptType uint64
 const (
 	SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY ScriptType = iota
 	SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT
+	SCRIPT_SIMPLE_NOTHING
 )
 
 func (t ScriptType) String() string {
@@ -13,6 +14,8 @@ func (t ScriptType) String() string {
 		return "SCRIPT_UPDATE_ASSET_FEE_LIQUIDITY"
 	case SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT:
 		return "SCRIPT_RESOLUTION_CONDITIONAL_PAYMENT"
+	case SCRIPT_SIMPLE_NOTHING:
+		return "SCRIPT_SIMPLE_NOTHING"
 	default:
 		return "Unknown ScriptType"
 	}

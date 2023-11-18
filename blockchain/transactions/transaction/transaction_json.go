@@ -55,6 +55,10 @@ type json_TransactionSimpleInput struct {
 	Signature []byte `json:"signature" msgpack:"signature"`                     //64
 }
 
+type json_TransactionSimpleNothing struct {
+	*json_TransactionSimple
+}
+
 type json_Only_TransactionSimpleExtraUpdateAssetFeeLiquidity struct {
 	Liquidities  []*asset_fee_liquidity.AssetFeeLiquidity `json:"liquidities"`
 	NewCollector bool                                     `json:"newCollector"`
@@ -193,6 +197,8 @@ func marshalJSON(tx *Transaction, marshal func(any) ([]byte, error)) ([]byte, er
 				extra.MultisigPublicKeys,
 				extra.Signatures,
 			}
+		case transaction_simple.SCRIPT_SIMPLE_NOTHING:
+		case transaction_simple
 		default:
 			return nil, errors.New("Invalid simple.TxScript")
 		}
